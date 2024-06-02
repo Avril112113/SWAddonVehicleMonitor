@@ -14,29 +14,32 @@ function readMonCoord(reader)
 end
 
 
-PACKET_RESOLUION = Binnet:registerPacketWriter(1, function(_, writer, resolution)
-	writeMonCoords(writer, resolution[1], resolution[2])
-end)
+-- Mode == true == "Alternate"
+if not property.getBool("Mode") then
+	PACKET_RESOLUION = Binnet:registerPacketWriter(1, function(_, writer, resolution)
+		writeMonCoords(writer, resolution[1], resolution[2])
+	end)
+	Binnet:registerPacketReader(1, function(_, writer)
+		Binnet:send(PACKET_RESOLUION, prev_resolution)
+	end)
+end
 
 __PACKET_INPUT_WRITER_F = function(_, writer, touch)
-	writeMonCoords(writer, touch[1], touch[2])
+	writeMonCoords(writer, touch[1] - MON_OFFSET_X, touch[2] - MON_OFFSET_Y)
 	writer:writeUByte(touch[3] and 1 or 0)
 end
 PACKET_INPUT1 = Binnet:registerPacketWriter(2, __PACKET_INPUT_WRITER_F)
 PACKET_INPUT2 = Binnet:registerPacketWriter(3, __PACKET_INPUT_WRITER_F)
 
 
-Binnet:registerPacketReader(1, function(_, writer)
-	Binnet:send(PACKET_RESOLUION, prev_resolution)
-end)
-
+-- FULL_RESET
 Binnet:registerPacketReader(2, reset)
 
 -- GROUP_RESET
 ---@param reader IOStream
 Binnet:registerPacketReader(10, function(_, reader)
 	cmd_group_idx = reader:readUByte()
-	cmd_groups[cmd_group_idx] = {enabled=false}
+	cmd_groups[cmd_group_idx] = {enabled=false,offset={0,0}}
 	cmd_group_draw_idx = 1
 end)
 -- GROUP_SYNC
@@ -44,6 +47,7 @@ end)
 Binnet:registerPacketReader(11, function(_, reader)
 	cmd_group_idx = reader:readUByte()
 	cmd_groups[cmd_group_idx].enabled = reader:readUByte() > 0
+	cmd_groups[cmd_group_idx].offset = #reader > 0 and {readMonCoord(reader), readMonCoord(reader)} or {0,0}
 	cmd_group_draw_idx = 1
 end)
 -- GROUP_ENABLE
@@ -56,18 +60,25 @@ end)
 Binnet:registerPacketReader(13, function(_, reader)
 	cmd_groups[reader:readUByte()].enabled = false
 end)
+-- GROUP_OFFSET
+---@param reader IOStream
+Binnet:registerPacketReader(13, function(_, reader)
+	cmd_groups[reader:readUByte()].offset = {readMonCoord(reader), readMonCoord(reader)}
+end)
 
+-- These are called each draw call, the reader contents is copied for each draw call.
+-- Not best for perf, but best for char count.
 PROPS_FUNCS = {
 	["String"]=IOStream.readString,
 	["UByte"]=IOStream.readUByte,
 	["MonCoord"]=readMonCoord,
 	---@param reader IOStream
-	["MonX"]=function(reader)
-		return readMonCoord(reader)
+	["MonX"]=function(reader, group)
+		return MON_OFFSET_X + group.offset[1] + readMonCoord(reader)
 	end,
 	---@param reader IOStream
-	["MonY"]=function(reader)
-		return readMonCoord(reader)
+	["MonY"]=function(reader, group)
+		return MON_OFFSET_Y + group.offset[2] + readMonCoord(reader)
 	end,
 	---@param reader IOStream
 	["DBFmt"]=function(reader)
@@ -88,9 +99,13 @@ PROPS_FUNCS = {
 		return __n//1|0 == __n and __n|0 or __n
 	end,
 	---@param reader IOStream
-	["MapPos"]=function(reader) return reader:readCustom(-130000, 130000, 0.0001) end,
-	---@param reader IOStream
-	["MapZoom"]=function(reader) return reader:readCustom(0.1, 50, 0.00125) end,
+	["MapXZZoom"]=function(reader)
+		-- 1.3e5 == 130000
+		-- 1e-4 == 0.0001
+		__x, __z = reader:readCustom(-1.3e5, 1.3e5, 1e-4), reader:readCustom(-1.3e5, 1.3e5, 1e-4)
+		__zoom = reader:readCustom(0.1, 50, 0.00125)
+		return __x - (MON_OFFSET_X / prev_resolution[1] * __zoom * 1000), __z, __zoom
+	end,
 }
 for i=0,255 do
 	local args = {}
@@ -98,11 +113,12 @@ for i=0,255 do
 	-- debug.log("[SW] " .. i .. " " .. table.concat(args, " "))
 	if args[1] == "draw" then
 		Binnet:registerPacketReader(i, function (_, reader)
-			cmd_groups[cmd_group_idx][cmd_group_draw_idx] = function()
+			---@param group CmdGroup
+			cmd_groups[cmd_group_idx][cmd_group_draw_idx] = function(group)
 				local draw_args = {}
 				local reader_cpy = shallowCopy(reader, {})
 				for arg_reader_i=4,#args do
-					for _, v in ipairs({PROPS_FUNCS[args[arg_reader_i]](reader_cpy)}) do
+					for _, v in ipairs({PROPS_FUNCS[args[arg_reader_i]](reader_cpy, group)}) do
 						table.insert(draw_args, v)
 					end
 				end

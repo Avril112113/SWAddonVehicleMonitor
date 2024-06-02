@@ -5,18 +5,22 @@ require("packets")
 
 INPUT_COUNT = property.getNumber("Inputs")
 OUTPUT_COUNT = property.getNumber("Outputs")
+-- Static offsets might be handy for debugging. Touch is also offset by this.
+MON_OFFSET_X = property.getNumber("OffX")
+MON_OFFSET_Y = property.getNumber("OffY")
 
 
 ---@class CmdGroup
 ---@field enabled boolean
----@field [integer] fun()
+---@field offset {[1]:number,[2]:number}
+---@field [integer] fun(group:CmdGroup)
 
 
 function reset()
 	---@type CmdGroup[]
 	cmd_groups = {}
 	for i=0,255 do
-		cmd_groups[i] = {enabled=false}
+		cmd_groups[i] = {enabled=false,offset={0,0}}
 	end
 	cmd_group_idx = 1
 	cmd_group_draw_idx = 1
@@ -34,7 +38,7 @@ tick = 0
 monitor_on = true
 function onTick()
 	tick = tick + 1
-	if tick < 30 then
+	if tick < 10 then
 		return
 	end
 
@@ -50,16 +54,14 @@ function onTick()
 	end
 	local packet_processed = Binnet:process(values)
 
-	if resolution[1] ~= 0 and resolution[2] ~= 0 then
-		if prev_resolution[1] ~= resolution[1] or prev_resolution[2] ~= resolution[2] then
-			Binnet:send(PACKET_RESOLUION, resolution)
-		end
-		if prev_input1[1] ~= input1[1] or prev_input1[2] ~= input1[2] or prev_input1[3] ~= input1[3] then
-			Binnet:send(PACKET_INPUT1, input1)
-		end
-		if prev_input2[1] ~= input2[1] or prev_input2[2] ~= input2[2] or prev_input2[3] ~= input2[3] then
-			Binnet:send(PACKET_INPUT2, input2)
-		end
+	if prev_resolution[1] ~= resolution[1] or prev_resolution[2] ~= resolution[2] then
+		Binnet:send(PACKET_RESOLUION, resolution)
+	end
+	if prev_input1[1] ~= input1[1] or prev_input1[2] ~= input1[2] or prev_input1[3] ~= input1[3] then
+		Binnet:send(PACKET_INPUT1, input1)
+	end
+	if prev_input2[1] ~= input2[1] or prev_input2[2] ~= input2[2] or prev_input2[3] ~= input2[3] then
+		Binnet:send(PACKET_INPUT2, input2)
 	end
 
 	output.setBool(2, #Binnet.outStream > 0 or packet_processed > 0)
@@ -79,7 +81,7 @@ function onDraw()
 	for i=0,255 do
 		if cmd_groups[i] and cmd_groups[i].enabled then
 			for _, f in ipairs(cmd_groups[i]) do
-				f()
+				f(cmd_groups[i])
 			end
 		end
 	end

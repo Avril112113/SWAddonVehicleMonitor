@@ -3,8 +3,6 @@ require "binnet"
 local Packets = require "vehmon.packets"
 
 
----@class VehMon.
-
 ---@class VehMon.Monitor
 ---@field width integer
 ---@field height integer
@@ -16,6 +14,7 @@ local Packets = require "vehmon.packets"
 ---@field binnet Binnet_VehMon
 ---@field dial_count integer
 ---@field keypad_count integer
+---@field alt_count integer
 ---@field initialized boolean
 ---@field monitor VehMon.Monitor
 local VehMon = {}
@@ -24,12 +23,14 @@ local VehMon = {}
 ---@param vehicle_id integer
 ---@param dial_count integer
 ---@param keypad_count integer
+---@param alt_count integer? # Alts use the same keypads, but their own dials, they can be used to effectivelty have a larger monitor.
 ---@return VehMon?
-function VehMon.new(vehicle_id, dial_count, keypad_count)
+function VehMon.new(vehicle_id, dial_count, keypad_count, alt_count)
 	local self = shallowCopy(VehMon, {
 		vehicle_id=vehicle_id,
 		dial_count=dial_count,
 		keypad_count=keypad_count,
+		alt_count=alt_count or 0,
 		initialized=false,
 	})
 	return self
@@ -65,40 +66,50 @@ function VehMon:init()
 	self.binnet = Packets.BinnetBase:new()
 	self.binnet.vehmon = self
 	self.binnet:send(Packets.reset)  -- The packet can fit into 1 tick, meaning if the vehicle isn't ready, it won't get it, which is fine.
+	self.alt_binnets = {}
+	for i=1,self.alt_count do
+		self.alt_binnets[i] = Packets.BinnetBase:new()
+		self.alt_binnets[i].vehmon = self
+	end
 end
 
 function VehMon:deinit()
 	self.initialized = false
 	self.monitor = nil
 	self.binnet = nil
+	self.alt_binnets = nil
 end
 
 function VehMon:update()
+	---@param alt integer?
+	local function binnet_process(alt)
+		local binnet = alt == nil and self.binnet or self.alt_binnets[alt]
+		local read_values = {}
+		for i=1,self.dial_count do
+			local data, ok = server.getVehicleDial(self.vehicle_id, alt == nil and "vehmon_"..i or "vehmon_" .. (alt|0) .. "_"..i)
+			if not ok then return end
+			read_values[i] = data.value
+		end
+		local byte_count, packet_count = binnet:process(read_values)
+		-- if byte_count > 0 then
+		-- 	log_debug(("%s - %s bytes, %s packets"):format(self.vehicle_id, byte_count, packet_count))
+		-- end
+	end
+
 	if not self.initialized then return end
 
 	self.monitor.touch1.was_pressed = self.monitor.touch1.pressed
 	self.monitor.touch2.was_pressed = self.monitor.touch2.pressed
 
-	local read_values = {}
-	for i=1,self.dial_count do
-		local data, ok = server.getVehicleDial(self.vehicle_id, "vehmon_"..i)
-		if not ok then return end
-		read_values[i] = data.value
-	end
-	local byte_count, packet_count = self.binnet:process(read_values)
-	if byte_count > 0 then
-		log_debug(("%s - %s bytes, %s packets"):format(self.vehicle_id, byte_count, packet_count))
-	end
-
-	local write_values = self.binnet:write(self.keypad_count)
-	for i=1,self.keypad_count do
-		server.setVehicleKeypad(self.vehicle_id, "vehmon_"..i, write_values[i])
+	binnet_process()
+	for i=1,self.alt_count do
+		binnet_process(i)
 	end
 
 	local GROUP_IDXS = {
 		MAP = 0,
 		TOP_BAR = 1,
-		PLAYER_INFO = 2,
+		INFO = 2,
 	}
 	local DB_IDXS = {
 		COMPANY_NAME = 1,
@@ -108,6 +119,15 @@ function VehMon:update()
 		SERVER_TIME = 5,
 	}
 
+	if self.monitor.touch1.pressed and not self.monitor.touch1.was_pressed then
+		log_debug(self.monitor.touch1.y, self.monitor.height/2)
+		if self.monitor.touch1.y < self.monitor.height/2 then
+			self.__yoff = (self.__yoff or 0) - 5
+		else
+			self.__yoff = (self.__yoff or 0) + 5
+		end
+		self.binnet:send(Packets.GROUP_OFFSET, GROUP_IDXS.INFO, 0, self.__yoff)
+	end
 	if self.monitor.width ~= 0 and not self._sent_setup then
 		self._sent_setup = true
 		log_debug(("%s - Sending setup packets."):format(self.vehicle_id))
@@ -121,16 +141,16 @@ function VehMon:update()
 
 		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.TOP_BAR)
 		self.binnet:send(Packets.DRAW_COLOR, 0, 0, 0)
-		self.binnet:send(Packets.DRAW_RECTF, 0, 0, 1000, 40)
+		self.binnet:send(Packets.DRAW_RECTF, 0, 0, self.monitor.width, 40)
 		self.binnet:send(Packets.DRAW_COLOR, 255, 255, 255)
-		self.binnet:send(Packets.DRAW_RECT, 0, 8, 288, 0)
+		self.binnet:send(Packets.DRAW_RECT, 0, 8, self.monitor.width-1, 0)
 		self.binnet:send(Packets.DRAW_TEXT, 1, 1, DB_IDXS.COMPANY_NAME, "%s")
 		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.COMPANY_NAME, 1, "")
 		self.binnet:send(Packets.DRAW_TEXT, 199, 1, DB_IDXS.MONEY, "$%s")
 		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.MONEY, 1, 0)
 		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.TOP_BAR)
 
-		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.PLAYER_INFO)
+		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.INFO)
 		self.binnet:send(Packets.DRAW_TEXT, 1, 14, DB_IDXS.PLAYER_NAME, "Name: %s")
 		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.PLAYER_NAME, 1, server.getPlayerName(0) or "<NO_PLAYER>")
 		self.binnet:send(Packets.DRAW_TEXT, 1, 14+8, DB_IDXS.PLAYER_POS, "Pos: %s, %s, %s")
@@ -139,7 +159,7 @@ function VehMon:update()
 		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 3, 0)
 		self.binnet:send(Packets.DRAW_TEXT, 1, 14+8+8, DB_IDXS.SERVER_TIME, "server time: %s")
 		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.SERVER_TIME, 1, 0)
-		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.PLAYER_INFO)
+		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.INFO)
 
 		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.COMPANY_NAME, 1, "Test company INC")
 		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.MONEY, 1, 12345678987654321)
@@ -165,6 +185,11 @@ function VehMon:update()
 	if self.monitor.width == 0 and not self._sent_setup and not self._sent_resolution_request then
 		self._sent_resolution_request = true
 		self.binnet:send(Packets.GET_RESOLUTION)
+	end
+
+	local write_values = self.binnet:write(self.keypad_count)
+	for i=1,self.keypad_count do
+		server.setVehicleKeypad(self.vehicle_id, "vehmon_"..i, write_values[i])
 	end
 end
 

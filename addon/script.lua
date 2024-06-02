@@ -13,7 +13,7 @@ local vehmons = {}
 
 ---@param vehicle_id integer
 local function createVehMon(vehicle_id)
-	local vehmon = VehMon.new(vehicle_id, 5, 25)
+	local vehmon = VehMon.new(vehicle_id, 5, 25, 2)
 	vehmons[vehicle_id] = vehmon
 	if vehmon then
 		g_savedata.vehmons[vehicle_id] = true

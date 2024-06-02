@@ -11,7 +11,7 @@ draw,106,drawTriangleF,MonX,MonY,MonX,MonY,MonX,MonY
 draw,107,drawLine,MonX,MonY,MonX,MonY
 draw,108,drawText,MonX,MonY,DBFmt
 draw,109,drawTextBox,MonX,MonY,MonCoord,MonCoord,DBFmt,AlignByte,AlignByte
-draw,110,drawMap,MapPos,MapPos,MapZoom
+draw,110,drawMap,MapXZZoom
 draw,111,setMapColorGrass,UByte,UByte,UByte,UByte
 draw,112,setMapColorLand,UByte,UByte,UByte,UByte
 draw,113,setMapColorOcean,UByte,UByte,UByte,UByte
