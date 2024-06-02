@@ -67,8 +67,8 @@ end)
 ---@param binnet Binnet_VehMon
 BinnetBase:registerPacketReader(2, function(binnet, reader)
 	local vehmon = binnet.vehmon
-	vehmon.monitor.touch1.x = reader:readCustom(0, (2^16)-1, 1)
-	vehmon.monitor.touch1.y = reader:readCustom(0, (2^16)-1, 1)
+	vehmon.monitor.touch1.x = readMonCoord(reader)
+	vehmon.monitor.touch1.y = readMonCoord(reader)
 	vehmon.monitor.touch1.pressed = reader:readUByte() ~= 0
 	-- log_debug(("%s - touch1 %s %s %s"):format(vehmon.vehicle_id, vehmon.monitor.touch1.x, vehmon.monitor.touch1.y, vehmon.monitor.touch1.pressed))
 end)
@@ -76,8 +76,8 @@ end)
 ---@param binnet Binnet_VehMon
 BinnetBase:registerPacketReader(3, function(binnet, reader)
 	local vehmon = binnet.vehmon
-	vehmon.monitor.touch2.x = reader:readCustom(0, (2^16)-1, 1)
-	vehmon.monitor.touch2.y = reader:readCustom(0, (2^16)-1, 1)
+	vehmon.monitor.touch2.x = readMonCoord(reader)
+	vehmon.monitor.touch2.y = readMonCoord(reader)
 	vehmon.monitor.touch2.pressed = reader:readUByte() ~= 0
 	-- log_debug(("%s - touch2 %s %s %s"):format(vehmon.vehicle_id, vehmon.monitor.touch2.x, vehmon.monitor.touch2.y, vehmon.monitor.touch2.pressed))
 end)
