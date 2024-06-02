@@ -456,108 +456,108 @@ SS_SW_DBG._info[48] = {
 	["column"] = 1,
 	["file"] = "script.lua",
 }
----@source .././script.lua:8:0
+---@source .././script.lua:6:15
 SS_SW_DBG._info[49] = {
-	["name"] = "write2ByteUInt",
-	["line"] = 5,
-	["column"] = 30,
+	["name"] = "readMonCoord",
+	["line"] = 4,
+	["column"] = 28,
 	["file"] = "vehmon/packets.lua",
 }
----@source .././script.lua:15:38
+---@source .././script.lua:15:7
 SS_SW_DBG._info[50] = {
-	["name"] = "writeDBStr",
-	["line"] = 12,
-	["column"] = 26,
-	["file"] = "vehmon/packets.lua",
-}
----@source .././script.lua:20:35
-SS_SW_DBG._info[51] = {
-	["name"] = "writeAlignByte",
-	["line"] = 19,
-	["column"] = 30,
-	["file"] = "vehmon/packets.lua",
-}
----@source .././script.lua:21:0
-SS_SW_DBG._info[52] = {
-	["name"] = "to_zsr_double",
-	["line"] = 24,
+	["name"] = "writeMonCoord",
+	["line"] = 10,
 	["column"] = 29,
 	["file"] = "vehmon/packets.lua",
 }
----@source .././script.lua:28:20
+---@source .././script.lua:20:2
+SS_SW_DBG._info[51] = {
+	["name"] = "writeDBStr",
+	["line"] = 17,
+	["column"] = 26,
+	["file"] = "vehmon/packets.lua",
+}
+---@source .././script.lua:22:32
+SS_SW_DBG._info[52] = {
+	["name"] = "writeAlignByte",
+	["line"] = 24,
+	["column"] = 30,
+	["file"] = "vehmon/packets.lua",
+}
+---@source .././script.lua:26:19
 SS_SW_DBG._info[53] = {
+	["name"] = "to_zsr_double",
+	["line"] = 29,
+	["column"] = 29,
+	["file"] = "vehmon/packets.lua",
+}
+---@source .././script.lua:34:45
+SS_SW_DBG._info[54] = {
 	["name"] = "from_zsr_double",
-	["line"] = 33,
+	["line"] = 38,
 	["column"] = 31,
 	["file"] = "vehmon/packets.lua",
 }
----@source .././script.lua:54:21
-SS_SW_DBG._info[54] = {
-	["name"] = "anonymous:54",
-	["line"] = 53,
-	["column"] = 44,
-	["file"] = "vehmon/packets.lua",
-}
----@source .././script.lua:65:0
+---@source .././script.lua:61:13
 SS_SW_DBG._info[55] = {
 	["name"] = "anonymous:55",
-	["line"] = 59,
-	["column"] = 69,
+	["line"] = 58,
+	["column"] = 44,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[56] = {
 	["name"] = "anonymous:56",
-	["line"] = 63,
-	["column"] = 44,
+	["line"] = 64,
+	["column"] = 69,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[57] = {
 	["name"] = "anonymous:57",
-	["line"] = 72,
+	["line"] = 68,
 	["column"] = 44,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[58] = {
 	["name"] = "anonymous:58",
-	["line"] = 81,
-	["column"] = 65,
+	["line"] = 77,
+	["column"] = 44,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[59] = {
 	["name"] = "anonymous:59",
-	["line"] = 84,
-	["column"] = 67,
+	["line"] = 86,
+	["column"] = 65,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[60] = {
 	["name"] = "anonymous:60",
-	["line"] = 87,
-	["column"] = 66,
+	["line"] = 89,
+	["column"] = 67,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[61] = {
 	["name"] = "anonymous:61",
-	["line"] = 91,
-	["column"] = 68,
+	["line"] = 92,
+	["column"] = 66,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[62] = {
 	["name"] = "anonymous:62",
-	["line"] = 94,
-	["column"] = 69,
+	["line"] = 96,
+	["column"] = 68,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[63] = {
 	["name"] = "anonymous:63",
-	["line"] = 98,
+	["line"] = 99,
 	["column"] = 69,
 	["file"] = "vehmon/packets.lua",
 }
@@ -571,8 +571,8 @@ SS_SW_DBG._info[64] = {
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[65] = {
 	["name"] = "anonymous:65",
-	["line"] = 111,
-	["column"] = 68,
+	["line"] = 108,
+	["column"] = 69,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
@@ -586,62 +586,62 @@ SS_SW_DBG._info[66] = {
 SS_SW_DBG._info[67] = {
 	["name"] = "anonymous:67",
 	["line"] = 121,
-	["column"] = 67,
+	["column"] = 68,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[68] = {
 	["name"] = "anonymous:68",
-	["line"] = 127,
-	["column"] = 66,
+	["line"] = 126,
+	["column"] = 67,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[69] = {
 	["name"] = "anonymous:69",
-	["line"] = 133,
-	["column"] = 67,
+	["line"] = 132,
+	["column"] = 66,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[70] = {
 	["name"] = "anonymous:70",
-	["line"] = 139,
-	["column"] = 68,
+	["line"] = 138,
+	["column"] = 67,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[71] = {
 	["name"] = "anonymous:71",
 	["line"] = 144,
-	["column"] = 69,
+	["column"] = 68,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[72] = {
 	["name"] = "anonymous:72",
 	["line"] = 149,
-	["column"] = 70,
+	["column"] = 69,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[73] = {
 	["name"] = "anonymous:73",
-	["line"] = 157,
-	["column"] = 71,
+	["line"] = 154,
+	["column"] = 70,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[74] = {
 	["name"] = "anonymous:74",
-	["line"] = 165,
-	["column"] = 66,
+	["line"] = 162,
+	["column"] = 71,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[75] = {
 	["name"] = "anonymous:75",
-	["line"] = 171,
+	["line"] = 170,
 	["column"] = 66,
 	["file"] = "vehmon/packets.lua",
 }
@@ -649,60 +649,67 @@ SS_SW_DBG._info[75] = {
 SS_SW_DBG._info[76] = {
 	["name"] = "anonymous:76",
 	["line"] = 176,
-	["column"] = 69,
+	["column"] = 66,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:65:0
 SS_SW_DBG._info[77] = {
 	["name"] = "anonymous:77",
-	["line"] = 185,
+	["line"] = 181,
+	["column"] = 69,
+	["file"] = "vehmon/packets.lua",
+}
+---@source .././script.lua:65:0
+SS_SW_DBG._info[78] = {
+	["name"] = "anonymous:78",
+	["line"] = 190,
 	["column"] = 65,
 	["file"] = "vehmon/packets.lua",
 }
 ---@source .././script.lua:1:0
-SS_SW_DBG._info[78] = {
+SS_SW_DBG._info[79] = {
 	["name"] = '__SSSWTOOL_REQUIRES["vehmon.packets"]',
 	["line"] = 1,
 	["column"] = 1,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:15:27
-SS_SW_DBG._info[79] = {
+SS_SW_DBG._info[80] = {
 	["name"] = "createVehMon",
 	["line"] = 15,
 	["column"] = 28,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:26:27
-SS_SW_DBG._info[80] = {
+SS_SW_DBG._info[81] = {
 	["name"] = "removeVehMon",
 	["line"] = 26,
 	["column"] = 28,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:32:17
-SS_SW_DBG._info[81] = {
+SS_SW_DBG._info[82] = {
 	["name"] = "onCreate",
 	["line"] = 32,
 	["column"] = 18,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:41:15
-SS_SW_DBG._info[82] = {
+SS_SW_DBG._info[83] = {
 	["name"] = "onTick",
 	["line"] = 41,
 	["column"] = 16,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:53:23
-SS_SW_DBG._info[83] = {
+SS_SW_DBG._info[84] = {
 	["name"] = "onVehicleSpawn",
 	["line"] = 53,
 	["column"] = 24,
 	["file"] = "script.lua",
 }
 ---@source .././script.lua:62:25
-SS_SW_DBG._info[84] = {
+SS_SW_DBG._info[85] = {
 	["name"] = "onVehicleDespawn",
 	["line"] = 62,
 	["column"] = 26,
@@ -1508,31 +1515,37 @@ end
 __SSSWTOOL_MOD_TO_FILEPATH["vehmon.packets"] = "vehmon/packets.lua"
 ---@source .././script.lua:1:0
 __SSSWTOOL_REQUIRES["vehmon.packets"] = function(...)
-	return SS_SW_DBG._trace_func(78, function(...)
+	return SS_SW_DBG._trace_func(79, function(...)
 		require("iostream")
-		---@source .././vehmon/packets.lua:5:0
-		local function write2ByteUInt(...)
-			return SS_SW_DBG._trace_func(49, function(writer, x)
-				writer:writeCustom(x, 0, 2 ^ 16 - 1, 1)
+		---@source .././vehmon/packets.lua:4:0
+		local function readMonCoord(...)
+			return SS_SW_DBG._trace_func(49, function(reader)
+				return reader:readCustom(-2 ^ 12 / 2 + 2, 2 ^ 12 / 2, 0.125)
 			end, ...)
 		end
-		---@source .././vehmon/packets.lua:12:0
+		---@source .././vehmon/packets.lua:10:0
+		local function writeMonCoord(...)
+			return SS_SW_DBG._trace_func(50, function(writer, x)
+				writer:writeCustom(x, -2 ^ 12 / 2 + 2, 2 ^ 12 / 2, 0.125)
+			end, ...)
+		end
+		---@source .././vehmon/packets.lua:17:0
 		local function writeDBStr(...)
-			return SS_SW_DBG._trace_func(50, function(writer, db_idx, fmt)
+			return SS_SW_DBG._trace_func(51, function(writer, db_idx, fmt)
 				writer:writeUByte(db_idx)
 				writer:writeString(fmt)
 			end, ...)
 		end
-		---@source .././vehmon/packets.lua:19:0
+		---@source .././vehmon/packets.lua:24:0
 		local function writeAlignByte(...)
-			return SS_SW_DBG._trace_func(51, function(writer, align)
+			return SS_SW_DBG._trace_func(52, function(writer, align)
 				writer:writeUByte(align + 1)
 			end, ...)
 		end
-		---@source .././vehmon/packets.lua:24:0
+		---@source .././vehmon/packets.lua:29:0
 		local function to_zsr_double(...)
-			return SS_SW_DBG._trace_func(52, function(n)
-				---@source .././vehmon/packets.lua:25:1
+			return SS_SW_DBG._trace_func(53, function(n)
+				---@source .././vehmon/packets.lua:30:1
 				local bytes = {
 					iostream_packunpack(">d", "BBBBBBBB", n),
 				}
@@ -1543,106 +1556,106 @@ __SSSWTOOL_REQUIRES["vehmon.packets"] = function(...)
 				return bytes
 			end, ...)
 		end
-		---@source .././vehmon/packets.lua:33:0
+		---@source .././vehmon/packets.lua:38:0
 		local function from_zsr_double(...)
-			return SS_SW_DBG._trace_func(53, function(bytes)
+			return SS_SW_DBG._trace_func(54, function(bytes)
 				while #bytes < 8 do
-					---@source .././vehmon/packets.lua:35:2
+					---@source .././vehmon/packets.lua:40:2
 					bytes[#bytes + 1] = 0
 				end
-				---@source .././vehmon/packets.lua:37:1
+				---@source .././vehmon/packets.lua:42:1
 				local n = iostream_packunpack("BBBBBBBB", ">d", table.unpack(bytes))
 				return n // 1 | 0 == n and n | 0 or n
 			end, ...)
 		end
-		---@source .././vehmon/packets.lua:44:0
-		local Packets = {}
-		---@source .././vehmon/packets.lua:48:0
-		local BinnetBase = Binnet:new()
 		---@source .././vehmon/packets.lua:49:0
+		local Packets = {}
+		---@source .././vehmon/packets.lua:53:0
+		local BinnetBase = Binnet:new()
+		---@source .././vehmon/packets.lua:54:0
 		Packets.BinnetBase = BinnetBase
 		BinnetBase:registerPacketReader(1, function(...)
-			return SS_SW_DBG._trace_func(54, function(binnet, reader)
-				---@source .././vehmon/packets.lua:54:1
+			return SS_SW_DBG._trace_func(55, function(binnet, reader)
+				---@source .././vehmon/packets.lua:59:1
 				local vehmon = binnet.vehmon
-				---@source .././vehmon/packets.lua:55:1
-				vehmon.monitor.width = reader:readCustom(0, 2 ^ 16 - 1, 1)
-				---@source .././vehmon/packets.lua:56:1
-				vehmon.monitor.height = reader:readCustom(0, 2 ^ 16 - 1, 1)
+				---@source .././vehmon/packets.lua:60:1
+				vehmon.monitor.width = readMonCoord(reader)
+				---@source .././vehmon/packets.lua:61:1
+				vehmon.monitor.height = readMonCoord(reader)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:59:0
+		---@source .././vehmon/packets.lua:64:0
 		Packets.GET_RESOLUTION = BinnetBase:registerPacketWriter(1, function(...)
-			return SS_SW_DBG._trace_func(55, function(binnet, writer)
+			return SS_SW_DBG._trace_func(56, function(binnet, writer)
 				
 			end, ...)
 		end)
 		BinnetBase:registerPacketReader(2, function(...)
-			return SS_SW_DBG._trace_func(56, function(binnet, reader)
-				---@source .././vehmon/packets.lua:64:1
+			return SS_SW_DBG._trace_func(57, function(binnet, reader)
+				---@source .././vehmon/packets.lua:69:1
 				local vehmon = binnet.vehmon
-				---@source .././vehmon/packets.lua:65:1
+				---@source .././vehmon/packets.lua:70:1
 				vehmon.monitor.touch1.x = reader:readCustom(0, 2 ^ 16 - 1, 1)
-				---@source .././vehmon/packets.lua:66:1
+				---@source .././vehmon/packets.lua:71:1
 				vehmon.monitor.touch1.y = reader:readCustom(0, 2 ^ 16 - 1, 1)
-				---@source .././vehmon/packets.lua:67:1
+				---@source .././vehmon/packets.lua:72:1
 				vehmon.monitor.touch1.pressed = reader:readUByte() ~= 0
 			end, ...)
 		end)
 		BinnetBase:registerPacketReader(3, function(...)
-			return SS_SW_DBG._trace_func(57, function(binnet, reader)
-				---@source .././vehmon/packets.lua:73:1
+			return SS_SW_DBG._trace_func(58, function(binnet, reader)
+				---@source .././vehmon/packets.lua:78:1
 				local vehmon = binnet.vehmon
-				---@source .././vehmon/packets.lua:74:1
+				---@source .././vehmon/packets.lua:79:1
 				vehmon.monitor.touch2.x = reader:readCustom(0, 2 ^ 16 - 1, 1)
-				---@source .././vehmon/packets.lua:75:1
+				---@source .././vehmon/packets.lua:80:1
 				vehmon.monitor.touch2.y = reader:readCustom(0, 2 ^ 16 - 1, 1)
-				---@source .././vehmon/packets.lua:76:1
+				---@source .././vehmon/packets.lua:81:1
 				vehmon.monitor.touch2.pressed = reader:readUByte() ~= 0
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:81:0
+		---@source .././vehmon/packets.lua:86:0
 		Packets.FULL_RESET = BinnetBase:registerPacketWriter(2, function(...)
-			return SS_SW_DBG._trace_func(58, function(binnet, writer)
+			return SS_SW_DBG._trace_func(59, function(binnet, writer)
 				
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:84:0
+		---@source .././vehmon/packets.lua:89:0
 		Packets.GROUP_RESET = BinnetBase:registerPacketWriter(10, function(...)
-			return SS_SW_DBG._trace_func(59, function(binnet, writer, group_id)
+			return SS_SW_DBG._trace_func(60, function(binnet, writer, group_id)
 				writer:writeUByte(group_id)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:87:0
+		---@source .././vehmon/packets.lua:92:0
 		Packets.GROUP_SYNC = BinnetBase:registerPacketWriter(11, function(...)
-			return SS_SW_DBG._trace_func(60, function(binnet, writer, group_id, enabled)
+			return SS_SW_DBG._trace_func(61, function(binnet, writer, group_id, enabled)
 				writer:writeUByte(group_id)
 				writer:writeUByte(enabled and 1 or 0)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:91:0
+		---@source .././vehmon/packets.lua:96:0
 		Packets.GROUP_ENABLE = BinnetBase:registerPacketWriter(12, function(...)
-			return SS_SW_DBG._trace_func(61, function(binnet, writer, group_id)
-				writer:writeUByte(group_id)
-			end, ...)
-		end)
-		---@source .././vehmon/packets.lua:94:0
-		Packets.GROUP_DISABLE = BinnetBase:registerPacketWriter(13, function(...)
 			return SS_SW_DBG._trace_func(62, function(binnet, writer, group_id)
 				writer:writeUByte(group_id)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:98:0
+		---@source .././vehmon/packets.lua:99:0
+		Packets.GROUP_DISABLE = BinnetBase:registerPacketWriter(13, function(...)
+			return SS_SW_DBG._trace_func(63, function(binnet, writer, group_id)
+				writer:writeUByte(group_id)
+			end, ...)
+		end)
+		---@source .././vehmon/packets.lua:103:0
 		Packets.DB_SET_STRING = BinnetBase:registerPacketWriter(30, function(...)
-			return SS_SW_DBG._trace_func(63, function(binnet, writer, db_idx, db_idy, s)
+			return SS_SW_DBG._trace_func(64, function(binnet, writer, db_idx, db_idy, s)
 				writer:writeUByte(db_idx)
 				writer:writeUByte(db_idy)
 				writer:writeString(s)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:103:0
+		---@source .././vehmon/packets.lua:108:0
 		Packets.DB_SET_NUMBER = BinnetBase:registerPacketWriter(31, function(...)
-			return SS_SW_DBG._trace_func(64, function(binnet, writer, db_idx, db_idy, n)
+			return SS_SW_DBG._trace_func(65, function(binnet, writer, db_idx, db_idy, n)
 				writer:writeUByte(db_idx)
 				writer:writeUByte(db_idy)
 				for _, byte in ipairs(to_zsr_double(n)) do
@@ -1650,118 +1663,118 @@ __SSSWTOOL_REQUIRES["vehmon.packets"] = function(...)
 				end
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:111:0
+		---@source .././vehmon/packets.lua:116:0
 		Packets.DB_SET_POS_N = BinnetBase:registerPacketWriter(33, function(...)
-			return SS_SW_DBG._trace_func(65, function(binnet, writer, db_idx, db_idy, n, precision)
+			return SS_SW_DBG._trace_func(66, function(binnet, writer, db_idx, db_idy, n, precision)
 				writer:writeUByte(db_idx)
 				writer:writeUByte(db_idy)
 				writer:writeUByte(1 / precision)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:116:0
+		---@source .././vehmon/packets.lua:121:0
 		Packets.DB_SET_NEG_N = BinnetBase:registerPacketWriter(34, function(...)
-			return SS_SW_DBG._trace_func(66, function(binnet, writer, db_idx, db_idy, n, precision)
+			return SS_SW_DBG._trace_func(67, function(binnet, writer, db_idx, db_idy, n, precision)
 				writer:writeUByte(db_idx)
 				writer:writeUByte(db_idy)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:121:0
+		---@source .././vehmon/packets.lua:126:0
 		Packets.DRAW_COLOR = BinnetBase:registerPacketWriter(100, function(...)
-			return SS_SW_DBG._trace_func(67, function(binnet, writer, r, g, b, a)
+			return SS_SW_DBG._trace_func(68, function(binnet, writer, r, g, b, a)
 				writer:writeUByte(r)
 				writer:writeUByte(g)
 				writer:writeUByte(b)
 				writer:writeUByte(a)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:127:0
+		---@source .././vehmon/packets.lua:132:0
 		Packets.DRAW_RECT = BinnetBase:registerPacketWriter(101, function(...)
-			return SS_SW_DBG._trace_func(68, function(binnet, writer, x, y, w, h)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				write2ByteUInt(writer, w)
-				write2ByteUInt(writer, h)
-			end, ...)
-		end)
-		---@source .././vehmon/packets.lua:133:0
-		Packets.DRAW_RECTF = BinnetBase:registerPacketWriter(102, function(...)
 			return SS_SW_DBG._trace_func(69, function(binnet, writer, x, y, w, h)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				write2ByteUInt(writer, w)
-				write2ByteUInt(writer, h)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeMonCoord(writer, w)
+				writeMonCoord(writer, h)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:139:0
-		Packets.DRAW_CIRCLE = BinnetBase:registerPacketWriter(103, function(...)
-			return SS_SW_DBG._trace_func(70, function(binnet, writer, x, y, r)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				write2ByteUInt(writer, r)
+		---@source .././vehmon/packets.lua:138:0
+		Packets.DRAW_RECTF = BinnetBase:registerPacketWriter(102, function(...)
+			return SS_SW_DBG._trace_func(70, function(binnet, writer, x, y, w, h)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeMonCoord(writer, w)
+				writeMonCoord(writer, h)
 			end, ...)
 		end)
 		---@source .././vehmon/packets.lua:144:0
-		Packets.DRAW_CIRCLEF = BinnetBase:registerPacketWriter(104, function(...)
+		Packets.DRAW_CIRCLE = BinnetBase:registerPacketWriter(103, function(...)
 			return SS_SW_DBG._trace_func(71, function(binnet, writer, x, y, r)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				write2ByteUInt(writer, r)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeMonCoord(writer, r)
 			end, ...)
 		end)
 		---@source .././vehmon/packets.lua:149:0
+		Packets.DRAW_CIRCLEF = BinnetBase:registerPacketWriter(104, function(...)
+			return SS_SW_DBG._trace_func(72, function(binnet, writer, x, y, r)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeMonCoord(writer, r)
+			end, ...)
+		end)
+		---@source .././vehmon/packets.lua:154:0
 		Packets.DRAW_TRIANGLE = BinnetBase:registerPacketWriter(105, function(...)
-			return SS_SW_DBG._trace_func(72, function(binnet, writer, x1, y1, x2, y2, x3, y3)
-				write2ByteUInt(writer, x1)
-				write2ByteUInt(writer, y1)
-				write2ByteUInt(writer, x2)
-				write2ByteUInt(writer, y2)
-				write2ByteUInt(writer, x3)
-				write2ByteUInt(writer, y3)
-			end, ...)
-		end)
-		---@source .././vehmon/packets.lua:157:0
-		Packets.DRAW_TRIANGLEF = BinnetBase:registerPacketWriter(106, function(...)
 			return SS_SW_DBG._trace_func(73, function(binnet, writer, x1, y1, x2, y2, x3, y3)
-				write2ByteUInt(writer, x1)
-				write2ByteUInt(writer, y1)
-				write2ByteUInt(writer, x2)
-				write2ByteUInt(writer, y2)
-				write2ByteUInt(writer, x3)
-				write2ByteUInt(writer, y3)
+				writeMonCoord(writer, x1)
+				writeMonCoord(writer, y1)
+				writeMonCoord(writer, x2)
+				writeMonCoord(writer, y2)
+				writeMonCoord(writer, x3)
+				writeMonCoord(writer, y3)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:165:0
+		---@source .././vehmon/packets.lua:162:0
+		Packets.DRAW_TRIANGLEF = BinnetBase:registerPacketWriter(106, function(...)
+			return SS_SW_DBG._trace_func(74, function(binnet, writer, x1, y1, x2, y2, x3, y3)
+				writeMonCoord(writer, x1)
+				writeMonCoord(writer, y1)
+				writeMonCoord(writer, x2)
+				writeMonCoord(writer, y2)
+				writeMonCoord(writer, x3)
+				writeMonCoord(writer, y3)
+			end, ...)
+		end)
+		---@source .././vehmon/packets.lua:170:0
 		Packets.DRAW_LINE = BinnetBase:registerPacketWriter(107, function(...)
-			return SS_SW_DBG._trace_func(74, function(binnet, writer, x1, y1, x2, y2)
-				write2ByteUInt(writer, x1)
-				write2ByteUInt(writer, y1)
-				write2ByteUInt(writer, x2)
-				write2ByteUInt(writer, y2)
-			end, ...)
-		end)
-		---@source .././vehmon/packets.lua:171:0
-		Packets.DRAW_TEXT = BinnetBase:registerPacketWriter(108, function(...)
-			return SS_SW_DBG._trace_func(75, function(binnet, writer, x, y, db_idx, fmt)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				writeDBStr(writer, db_idx, fmt)
+			return SS_SW_DBG._trace_func(75, function(binnet, writer, x1, y1, x2, y2)
+				writeMonCoord(writer, x1)
+				writeMonCoord(writer, y1)
+				writeMonCoord(writer, x2)
+				writeMonCoord(writer, y2)
 			end, ...)
 		end)
 		---@source .././vehmon/packets.lua:176:0
+		Packets.DRAW_TEXT = BinnetBase:registerPacketWriter(108, function(...)
+			return SS_SW_DBG._trace_func(76, function(binnet, writer, x, y, db_idx, fmt)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeDBStr(writer, db_idx, fmt)
+			end, ...)
+		end)
+		---@source .././vehmon/packets.lua:181:0
 		Packets.DRAW_TEXTBOX = BinnetBase:registerPacketWriter(109, function(...)
-			return SS_SW_DBG._trace_func(76, function(binnet, writer, x, y, w, h, db_idx, fmt, h_align, v_align)
-				write2ByteUInt(writer, x)
-				write2ByteUInt(writer, y)
-				write2ByteUInt(writer, w)
-				write2ByteUInt(writer, h)
+			return SS_SW_DBG._trace_func(77, function(binnet, writer, x, y, w, h, db_idx, fmt, h_align, v_align)
+				writeMonCoord(writer, x)
+				writeMonCoord(writer, y)
+				writeMonCoord(writer, w)
+				writeMonCoord(writer, h)
 				writeDBStr(writer, db_idx, fmt)
 				writeAlignByte(writer, h_align)
 				writeAlignByte(writer, v_align)
 			end, ...)
 		end)
-		---@source .././vehmon/packets.lua:185:0
+		---@source .././vehmon/packets.lua:190:0
 		Packets.DRAW_MAP = BinnetBase:registerPacketWriter(110, function(...)
-			return SS_SW_DBG._trace_func(77, function(binnet, writer, x, y, zoom)
+			return SS_SW_DBG._trace_func(78, function(binnet, writer, x, y, zoom)
 				writer:writeCustom(x, -130000, 130000, 0.0001)
 				writer:writeCustom(y, -130000, 130000, 0.0001)
 				writer:writeCustom(zoom, 0.1, 50, 0.00125)
@@ -1782,7 +1795,7 @@ local VehMon = require("vehmon")
 local vehmons = {}
 ---@source .././script.lua:15:0
 local function createVehMon(...)
-	return SS_SW_DBG._trace_func(79, function(vehicle_id)
+	return SS_SW_DBG._trace_func(80, function(vehicle_id)
 		---@source .././script.lua:16:1
 		local vehmon = VehMon.new(vehicle_id, 5, 25)
 		---@source .././script.lua:17:1
@@ -1798,7 +1811,7 @@ local function createVehMon(...)
 end
 ---@source .././script.lua:26:0
 local function removeVehMon(...)
-	return SS_SW_DBG._trace_func(80, function(vehicle_id)
+	return SS_SW_DBG._trace_func(81, function(vehicle_id)
 		---@source .././script.lua:27:1
 		vehmons[vehicle_id] = nil
 		---@source .././script.lua:28:1
@@ -1807,7 +1820,7 @@ local function removeVehMon(...)
 end
 ---@source .././script.lua:32:0
 function onCreate(...)
-	return SS_SW_DBG._trace_func(81, function()
+	return SS_SW_DBG._trace_func(82, function()
 		---@source .././script.lua:33:1
 		g_savedata.vehmons = g_savedata.vehmons or {}
 		for vehicle_id, _ in pairs(g_savedata.vehmons) do
@@ -1819,7 +1832,7 @@ end
 function onTick(...)
 	SS_SW_DBG.check_stack(0)
 	SS_SW_DBG._sendCheckStackHttp()
-	return SS_SW_DBG._trace_func(82, function(game_ticks)
+	return SS_SW_DBG._trace_func(83, function(game_ticks)
 		for _, vehmon in pairs(vehmons) do
 			vehmon:tick()
 		end
@@ -1827,7 +1840,7 @@ function onTick(...)
 end
 ---@source .././script.lua:53:0
 function onVehicleSpawn(...)
-	return SS_SW_DBG._trace_func(83, function(vehicle_id, peer_id, x, y, z, cost)
+	return SS_SW_DBG._trace_func(84, function(vehicle_id, peer_id, x, y, z, cost)
 		if peer_id >= 0 then
 			createVehMon(vehicle_id)
 		end
@@ -1835,7 +1848,7 @@ function onVehicleSpawn(...)
 end
 ---@source .././script.lua:62:0
 function onVehicleDespawn(...)
-	return SS_SW_DBG._trace_func(84, function(vehicle_id, peer_id)
+	return SS_SW_DBG._trace_func(85, function(vehicle_id, peer_id)
 		removeVehMon(vehicle_id)
 	end, ...)
 end
