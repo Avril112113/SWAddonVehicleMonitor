@@ -1,0 +1,19 @@
+{
+	"Lua.runtime.version": "Lua 5.3",
+    "Lua.runtime.pathStrict": true,
+	"Lua.workspace.library": [
+		"../shared",
+		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds",
+        "c:/Users/avril/.vscode/extensions/nameouschangey.lifeboatapi-0.0.33/assets/lua/Common/",
+        "c:/Users/avril/.vscode/extensions/nameouschangey.lifeboatapi-0.0.33/assets/lua/Addon/"
+	],
+	"json.schemas": [
+		{
+			"fileMatch": ["ssswtool.json"],
+			"url": "https://raw.githubusercontent.com/Avril112113/SSSWTool/main/ssswtool_schema.json"
+		}
+	],
+    "search.exclude": {
+        "_build": true
+    }
+}

@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "addon",
+			"path": "addon"
+		},
+		{
+			"name": "vehicle",
+			"path": "vehicle"
+		},
+		{
+			"path": "shared"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}

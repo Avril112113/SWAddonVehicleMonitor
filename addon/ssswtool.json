@@ -1,0 +1,14 @@
+{
+	"name": "AddonVehicleMonitor",
+	"entrypoint": "script.lua",
+	"src": [
+		".",
+		"../shared",
+		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds"
+	],
+	"out": "{SW_SAVE}/data/missions/{NAME}/script.lua",
+	"transformers": {
+		"combiner": true,
+		"tracing": true
+	}
+}
