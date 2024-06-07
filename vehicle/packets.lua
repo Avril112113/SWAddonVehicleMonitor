@@ -2,11 +2,11 @@ HALF_12P2 = (2^12)/2
 
 DEFAULT_FMT_MAP = {
 	-- expect number
-	A=0.0, a=0.0, E=0.0, e=0.0, f=0.0, G=0.0, g=0.0,
+	["A"]=0.0, ["a"]=0.0, ["E"]=0.0, ["e"]=0.0, ["f"]=0.0, ["G"]=0.0, ["g"]=0.0,
 	-- expect integer
-	c=0, d=0, i=0, o=0, u=0, X=0, x=0,
+	["c"]=0, ["d"]=0, ["i"]=0, ["o"]=0, ["u"]=0, ["X"]=0, ["x"]=0,
 	-- expect string
-	s="", q="",
+	["s"]="", ["q"]="",
 }
 
 
@@ -24,8 +24,7 @@ function readMonCoord(reader)
 end
 
 
--- Mode == true == "Alternate"
-if not property.getBool("Mode") then
+if property.getBool("Mode") then
 	PACKET_RESOLUION = Binnet:registerPacketWriter(1, function(_, writer, resolution)
 		writeMonCoords(writer, resolution[1], resolution[2])
 	end)
@@ -75,7 +74,7 @@ Binnet:registerPacketReader(13, function(_, reader)
 end)
 
 -- These are called each draw call, the reader contents is copied for each draw call.
--- Not best for perf, but best for char count.
+-- Not best for perf, but best for char count which is the limiting factor.
 PROPS_FUNCS = {
 	["String"]=IOStream.readString,
 	["UByte"]=IOStream.readUByte,

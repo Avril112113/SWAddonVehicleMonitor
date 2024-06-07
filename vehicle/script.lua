@@ -34,17 +34,9 @@ reset()
 
 require("packets")
 
--- tick = 0
 
 monitor_on = true
 function onTick()
-	-- tick = tick + 1
-	-- if tick < 60 then
-	-- 	return
-	-- end
-
-	cmd_groups[cmd_group_idx] = cmd_groups[cmd_group_idx] or {enabled=false}
-
 	local resolution = {input.getNumber(1), input.getNumber(2)}
 	local input1 = {input.getNumber(3), input.getNumber(4), input.getBool(1)}
 	local input2 = {input.getNumber(5), input.getNumber(6), input.getBool(2)}
@@ -55,15 +47,14 @@ function onTick()
 	end
 	local packet_processed = Binnet:process(values)
 
-	if prev_resolution[1] ~= resolution[1] or prev_resolution[2] ~= resolution[2] then
-		Binnet:send(PACKET_RESOLUION, resolution)
+	function send_packet_t_neq(a, b, packet_id, ...)
+		if b[1] ~= a[1] or b[2] ~= a[2] or b[3] ~= a[3] then
+			Binnet:send(packet_id, ...)
+		end
 	end
-	if prev_input1[1] ~= input1[1] or prev_input1[2] ~= input1[2] or prev_input1[3] ~= input1[3] then
-		Binnet:send(PACKET_INPUT1, input1)
-	end
-	if prev_input2[1] ~= input2[1] or prev_input2[2] ~= input2[2] or prev_input2[3] ~= input2[3] then
-		Binnet:send(PACKET_INPUT2, input2)
-	end
+	send_packet_t_neq(prev_resolution, resolution, PACKET_RESOLUION, resolution)
+	send_packet_t_neq(prev_input1, input1, PACKET_INPUT1, input1)
+	send_packet_t_neq(prev_input2, input2, PACKET_INPUT2, input2)
 
 	output.setBool(2, #Binnet.outStream > 0 or packet_processed > 0)
 	local output_values = Binnet:write(OUTPUT_COUNT)
