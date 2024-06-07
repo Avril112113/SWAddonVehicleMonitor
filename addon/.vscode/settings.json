@@ -3,9 +3,7 @@
     "Lua.runtime.pathStrict": true,
 	"Lua.workspace.library": [
 		"../shared",
-		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds",
-        "c:/Users/avril/.vscode/extensions/nameouschangey.lifeboatapi-0.0.33/assets/lua/Common/",
-        "c:/Users/avril/.vscode/extensions/nameouschangey.lifeboatapi-0.0.33/assets/lua/Addon/"
+		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds"
 	],
 	"json.schemas": [
 		{
