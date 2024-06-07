@@ -42,13 +42,11 @@ Binnet:registerPacketReader(10, function(_, reader)
 	cmd_groups[cmd_group_idx] = {enabled=false,offset={0,0}}
 	cmd_group_draw_idx = 1
 end)
--- GROUP_SYNC
+-- GROUP_SET
 ---@param reader IOStream
 Binnet:registerPacketReader(11, function(_, reader)
 	cmd_group_idx = reader:readUByte()
-	cmd_groups[cmd_group_idx].enabled = reader:readUByte() > 0
-	cmd_groups[cmd_group_idx].offset = #reader > 0 and {readMonCoord(reader), readMonCoord(reader)} or {0,0}
-	cmd_group_draw_idx = 1
+	cmd_group_draw_idx = reader:readUByte()
 end)
 -- GROUP_ENABLE
 ---@param reader IOStream
@@ -88,7 +86,7 @@ PROPS_FUNCS = {
 	end,
 	---@param reader IOStream
 	["AlignByte"]=function(reader)
-		return reader:readUByte()-1
+		return (reader:readUByte() or 0)-1
 	end,
 	---@param reader IOStream
 	["zsr_double"]=function(reader)

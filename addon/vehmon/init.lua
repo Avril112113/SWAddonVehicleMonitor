@@ -3,6 +3,22 @@ require "binnet"
 local Packets = require "vehmon.packets"
 
 
+---@generic T
+---@param v? T
+---@param message? any
+---@param ... any
+---@return T
+---@return any ...
+---@diagnostic disable-next-line: duplicate-set-field
+local function assert(v, message, ...)
+	if not v then
+		AVCmds.log(("[SW] [error] %s"):format(tostring(message)))
+		_ENV[message]()
+	end
+	return v, message, ...
+end
+
+
 ---@class VehMon.Monitor
 ---@field width integer
 ---@field height integer
@@ -11,50 +27,68 @@ local Packets = require "vehmon.packets"
 
 ---@class VehMon
 ---@field vehicle_id integer
----@field binnet Binnet_VehMon
+---@field _binnet Binnet_VehMon
 ---@field dial_count integer
 ---@field keypad_count integer
 ---@field alt_count integer
 ---@field initialized boolean
+---@field state "inactive"|"deinit"|"waiting"|"ready"|"init"
 ---@field monitor VehMon.Monitor
 local VehMon = {}
+
+
+function VehMon._create_default_group()
+	return {enabled=false,offset={0,0}}
+end
 
 
 ---@param vehicle_id integer
 ---@param dial_count integer
 ---@param keypad_count integer
 ---@param alt_count integer? # Alts use the same keypads, but their own dials, they can be used to effectivelty have a larger monitor.
----@return VehMon?
+---@return VehMon
 function VehMon.new(vehicle_id, dial_count, keypad_count, alt_count)
 	local self = shallowCopy(VehMon, {
-		vehicle_id=vehicle_id,
-		dial_count=dial_count,
-		keypad_count=keypad_count,
-		alt_count=alt_count or 0,
-		initialized=false,
+		vehicle_id = vehicle_id,
+		dial_count = dial_count,
+		keypad_count = keypad_count,
+		alt_count = alt_count or 0,
+		initialized = false,
+		state = "inactive",
 	})
 	return self
 end
 
-function VehMon:tick()
+function VehMon:onTickStart()
 	local is_simulating, exists = server.getVehicleSimulating(self.vehicle_id)
 	if not exists or not is_simulating then
 		if self.initialized then
 			log_debug(("%s - De-Init"):format(self.vehicle_id))
-			self:deinit()
+			self.state = "deinit"
+			self:_deinit()
+		elseif self.state ~= "inactive" then
+			self.state = "inactive"
 		end
-		return
+		return false
 	end
 
 	if self.monitor == nil then
 		log_debug(("%s - Init"):format(self.vehicle_id))
-		self:init()
+		self.state = "init"
+		self:_init()
+	elseif self.state ~= "waiting" and self.state ~= "ready" then
+		self.state = "waiting"
 	end
 
-	self:update()
+	self:_process()
+	return true
 end
 
-function VehMon:init()
+function VehMon:onTickEnd()
+	self:_write()
+end
+
+function VehMon:_init()
 	self.initialized = true
 	self.monitor = {
 		width = 0,
@@ -63,27 +97,144 @@ function VehMon:init()
 		touch2 = {x=0, y=0, pressed=false, was_pressed=true},
 	}
 	---@diagnostic disable-next-line: assign-type-mismatch
-	self.binnet = Packets.BinnetBase:new()
-	self.binnet.vehmon = self
-	self.binnet:send(Packets.reset)  -- The packet can fit into 1 tick, meaning if the vehicle isn't ready, it won't get it, which is fine.
-	self.alt_binnets = {}
+	self._binnet = Packets.BinnetBase:new()
+	self._binnet.vehmon = self
+	self._alt_binnets = {}
 	for i=1,self.alt_count do
-		self.alt_binnets[i] = Packets.BinnetBase:new()
-		self.alt_binnets[i].vehmon = self
+		self._alt_binnets[i] = Packets.BinnetBase:new()
+		self._alt_binnets[i].vehmon = self
+	end
+	---@alias VehMon._State.Draw any[] # [1]=PacketID, ...=args
+	---@alias VehMon._State.Group {enabled:boolean, offset:{[1]:number,[2]:number}}|VehMon._State.Draw[]
+	self:_reset_state()
+end
+
+function VehMon:_deinit()
+	self.initialized = false
+	self.monitor = nil
+	self._binnet = nil
+	self._alt_binnets = nil
+	self._state = nil
+end
+
+function VehMon:_reset_state()
+	self._state = {
+		do_reset = false,
+
+		group_id = -1,
+		group_draw_idx = 1,
+		---@type table<integer, VehMon._State.Group>
+		groups = {},
+		---@type table<integer,VehMon.DBValue[]>
+		db = {},
+
+		remote_group_id = -1,
+		remote_group_draw_idx = 1,
+		---@type table<integer, VehMon._State.Group>
+		prev_groups = {},
+		---@type table<integer,VehMon.DBValue[]>
+		prev_db = {},
+
+		---@type table<integer,true> # Stuff marked to be checked.
+		changed_groups = {},
+		---@type table<integer,true> # Stuff marked to be checked.
+		changed_db = {},
+	}
+	for i=-1,255 do
+		self._state.groups[i] = VehMon._create_default_group()
 	end
 end
 
-function VehMon:deinit()
-	self.initialized = false
-	self.monitor = nil
-	self.binnet = nil
-	self.alt_binnets = nil
+function VehMon:_update_state_changes()
+	-- TODO: We should 'throttle' down so we don't accidentially send old value due to overflowing the binnet buffer.
+	for db_idx, _ in pairs(self._state.changed_db) do
+		local current = self._state.db[db_idx]
+		local prev = self._state.prev_db[db_idx]
+		if prev == nil then
+			prev = {}
+			self._state.prev_db[db_idx] = prev
+		end
+		for db_idy, v in pairs(current) do
+			if v ~= prev[db_idy] then
+				if type(v) == "string" then
+					self._binnet:send(Packets.DB_SET_STRING, db_idx, db_idy, v)
+				elseif type(v) == "number" then
+					self._binnet:send(Packets.DB_SET_NUMBER, db_idx, db_idy, v)
+				else
+					assert(false, ("Invalid db value of type '%s'"):format(type(v)))
+				end
+				prev[db_idy] = v
+			end
+		end
+		self._state.changed_db[db_idx] = nil
+	end
+
+	for group_id, _ in pairs(self._state.changed_groups) do
+		local current = self._state.groups[group_id]
+		local prev = self._state.prev_groups[group_id]
+		if prev == nil then
+			prev = VehMon._create_default_group()
+			self._state.prev_groups[group_id] = prev
+		end
+		local changes = {}
+		local consider_reset = true
+		for draw_idx, current_packet in ipairs(current) do
+			if prev[draw_idx] == nil then
+				table.insert(changes, draw_idx)
+			else
+				local prev_packet = prev[draw_idx]
+				local found_difference = false
+				for i, v in ipairs(current_packet) do
+					if v ~= prev_packet[i] then
+						table.insert(changes, draw_idx)
+						found_difference = true
+						break
+					end
+				end
+				if not found_difference then
+					consider_reset = false
+				end
+			end
+		end
+		if #changes > 0 then
+			if consider_reset and current.enabled ~= prev.enabled then
+				self._binnet:send(Packets.GROUP_RESET, group_id)
+				prev.enabled = false
+				self._state.remote_group_id = group_id
+				self._state.remote_group_draw_idx = 1
+			end
+			for _, draw_idx in ipairs(changes) do
+				local current_packet = current[draw_idx]
+				---@cast current_packet VehMon._State.Draw
+				if self._state.remote_group_id ~= group_id or self._state.remote_group_draw_idx ~= draw_idx then
+					self._binnet:send(Packets.GROUP_SET, group_id, draw_idx)
+					self._state.remote_group_id = group_id
+					self._state.remote_group_draw_idx = draw_idx
+				end
+				self._binnet:send(table.unpack(current_packet))
+				prev[draw_idx] = current_packet
+				self._state.remote_group_draw_idx = self._state.remote_group_draw_idx + 1
+			end
+		end
+		if current.offset[1] ~= prev.offset[1] or current.offset[2] ~= prev.offset[2] then
+			self._binnet:send(Packets.GROUP_OFFSET, group_id, current.offset[1], current.offset[2])
+			prev.offset = current.offset
+		end
+		if current.enabled ~= prev.enabled then
+			if current.enabled then
+				self._binnet:send(Packets.GROUP_ENABLE, group_id)
+			else
+				self._binnet:send(Packets.GROUP_DISABLE, group_id)
+			end
+			prev.enabled = current.enabled
+		end
+	end
 end
 
-function VehMon:update()
+function VehMon:_process()
 	---@param alt integer?
 	local function binnet_process(alt)
-		local binnet = alt == nil and self.binnet or self.alt_binnets[alt]
+		local binnet = alt == nil and self._binnet or self._alt_binnets[alt]
 		local read_values = {}
 		for i=1,self.dial_count do
 			local data, ok = server.getVehicleDial(self.vehicle_id, alt == nil and "vehmon_"..i or "vehmon_" .. (alt|0) .. "_"..i)
@@ -106,91 +257,229 @@ function VehMon:update()
 		binnet_process(i)
 	end
 
-	local GROUP_IDXS = {
-		MAP = 0,
-		TOP_BAR = 1,
-		INFO = 2,
-	}
-	local DB_IDXS = {
-		COMPANY_NAME = 1,
-		MONEY = 2,
-		PLAYER_NAME = 3,
-		PLAYER_POS = 4,
-		SERVER_TIME = 5,
-	}
-
-	if self.monitor.touch1.pressed and not self.monitor.touch1.was_pressed then
-		log_debug(self.monitor.touch1.y, self.monitor.height/2)
-		if self.monitor.touch1.y < self.monitor.height/2 then
-			self.__yoff = (self.__yoff or 0) - 5
-		else
-			self.__yoff = (self.__yoff or 0) + 5
-		end
-		self.binnet:send(Packets.GROUP_OFFSET, GROUP_IDXS.INFO, 0, self.__yoff)
+	if self.state ~= "ready" and self.monitor.width ~= 0 and self.monitor.height ~= 0 then
+		self.state = "ready"
 	end
-	if self.monitor.width ~= 0 and not self._sent_setup then
-		self._sent_setup = true
-		log_debug(("%s - Sending setup packets."):format(self.vehicle_id))
+end
 
-		self.binnet:send(Packets.FULL_RESET)
-
-		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.MAP)
-		local vehPos = server.getVehiclePos(self.vehicle_id)
-		self.binnet:send(Packets.DRAW_MAP, vehPos[13], vehPos[15], 5)
-		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.MAP)
-
-		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.TOP_BAR)
-		self.binnet:send(Packets.DRAW_COLOR, 0, 0, 0)
-		self.binnet:send(Packets.DRAW_RECTF, 0, 0, self.monitor.width, 40)
-		self.binnet:send(Packets.DRAW_COLOR, 255, 255, 255)
-		self.binnet:send(Packets.DRAW_RECT, 0, 8, self.monitor.width-1, 0)
-		self.binnet:send(Packets.DRAW_TEXT, 1, 1, DB_IDXS.COMPANY_NAME, "%s")
-		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.COMPANY_NAME, 1, "")
-		self.binnet:send(Packets.DRAW_TEXT, 199, 1, DB_IDXS.MONEY, "$%s")
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.MONEY, 1, 0)
-		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.TOP_BAR)
-
-		self.binnet:send(Packets.GROUP_RESET, GROUP_IDXS.INFO)
-		self.binnet:send(Packets.DRAW_TEXT, 1, 14, DB_IDXS.PLAYER_NAME, "Name: %s")
-		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.PLAYER_NAME, 1, server.getPlayerName(0) or "<NO_PLAYER>")
-		self.binnet:send(Packets.DRAW_TEXT, 1, 14+8, DB_IDXS.PLAYER_POS, "Pos: %s, %s, %s")
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 1, 0)
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 2, 0)
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 3, 0)
-		self.binnet:send(Packets.DRAW_TEXT, 1, 14+8+8, DB_IDXS.SERVER_TIME, "server time: %s")
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.SERVER_TIME, 1, 0)
-		self.binnet:send(Packets.GROUP_ENABLE, GROUP_IDXS.INFO)
-
-		self.binnet:send(Packets.DB_SET_STRING, DB_IDXS.COMPANY_NAME, 1, "Test company INC")
-		self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.MONEY, 1, 12345678987654321)
-	end
-	if self.monitor.width ~= 0 then
-		local pending_bytes = #self.binnet.outStream
-		for _, packet in ipairs(self.binnet.outPackets) do pending_bytes = pending_bytes + #packet end
-		if pending_bytes <= self.keypad_count*3 then
-			-- Stuff to update but not overflow.
-			local pos = server.getPlayerPos(0)
-			local pos_floored = {pos[13]//1, pos[14]//1, pos[15]//1}
-			-- Only send the position if the player have moved.
-			if not self._last_pos_floored or self._last_pos_floored[1] ~= pos_floored[1] or self._last_pos_floored[2] ~= pos_floored[2] or self._last_pos_floored[3] ~= pos_floored[3] then
-				self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 1, pos_floored[1])
-				self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 2, pos_floored[2])
-				self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.PLAYER_POS, 3, pos_floored[3])
-			end
-			self._last_pos_floored = pos_floored
-			self.binnet:send(Packets.DB_SET_NUMBER, DB_IDXS.SERVER_TIME, 1, server.getTimeMillisec()/1000)
-		end
+function VehMon:_write()
+	if self._state.do_reset then
+		self:_reset_state()
+		self._binnet:send(Packets.FULL_RESET)
 	end
 
-	if self.monitor.width == 0 and not self._sent_setup and not self._sent_resolution_request then
+	if self.state == "ready" then
+		self:_update_state_changes()
+	end
+
+	if self.monitor.width == 0 and not self._sent_resolution_request then
 		self._sent_resolution_request = true
-		self.binnet:send(Packets.GET_RESOLUTION)
+		self._binnet:send(Packets.GET_RESOLUTION)  -- The packet can fit into 1 tick, meaning if the vehicle isn't ready, it won't get it, which is fine.
+		self._binnet:setLastUrgent()
 	end
 
-	local write_values = self.binnet:write(self.keypad_count)
+	local write_values = self._binnet:write(self.keypad_count)
 	for i=1,self.keypad_count do
 		server.setVehicleKeypad(self.vehicle_id, "vehmon_"..i, write_values[i])
 	end
+end
+
+---@param db_idx integer
+---@param db_idy integer
+---@param value VehMon.DBValue
+function VehMon:_state_set_db(db_idx, db_idy, value)
+	assert(type(db_idx) == "number" and db_idx >= 0 and db_idx <= 255, "Invalid db_idx, expected integer of range 0-255.")
+	assert(type(db_idy) == "number" and db_idy >= 0 and db_idy <= 255, "Invalid db_idy, expected integer of range 0-255.")
+	self._state.changed_db[db_idx] = true
+	self._state.db[db_idx] = self._state.db[db_idx] or {}
+	self._state.db[db_idx][db_idy] = value
+end
+
+---@param packet_id integer
+---@param ... any
+function VehMon:_state_draw(packet_id, ...)
+	self._state.changed_groups[self._state.group_id] = true
+	self._state.groups[self._state.group_id][self._state.group_draw_idx] = {packet_id, ...}
+	self._state.group_draw_idx = self._state.group_draw_idx + 1
+end
+
+
+---@alias VehMon.GroupID integer # 0 - 255 integer
+---@alias VehMon.DrawIDX integer # 0 - 255 integer
+---@alias VehMon.MonCoord number # -2046 - 2048 with 0.125 precision
+---@alias VehMon.DBIndex integer # 1 - 255 integer, '0' is used for no db index
+---@alias VehMon.DBValue string|number
+---@alias VehMon.MapCoord number # -130000 - 130000 with 0.0001 precision
+---@alias VehMon.MapZoom number # 0.1 - 50 with 0.00125 precision
+
+--- Resets everything.
+function VehMon:FullReset()
+	self._state.do_reset = true
+end
+
+--- Resets the group and selects it.
+---@param group_id VehMon.GroupID
+function VehMon:GroupReset(group_id)
+	self._state.group_id = group_id
+	self._state.changed_groups[group_id] = true
+	self._state.groups[group_id] = VehMon._create_default_group()
+	self._state.group_draw_idx = 1
+end
+
+--- Resets the group and selects it.
+---@param group_id VehMon.GroupID
+---@param draw_idx VehMon.DrawIDX?
+function VehMon:GroupSet(group_id, draw_idx)
+	self._state.group_id = group_id
+	self._state.group_draw_idx = draw_idx or 1
+end
+
+--- Sets weather a group is enabled or not.
+---@param group_id VehMon.GroupID
+---@param enabled boolean
+function VehMon:GroupEnabled(group_id, enabled)
+	self._state.changed_groups[group_id] = true
+	self._state.groups[group_id].enabled = enabled
+end
+
+--- Sets the groups position offset.
+---@param group_id VehMon.GroupID
+---@param x VehMon.MonCoord?
+---@param y VehMon.MonCoord?
+function VehMon:GroupOffset(group_id, x, y)
+	self._state.changed_groups[group_id] = true
+	local group = self._state.groups[group_id]
+	if x then
+		group.offset[1] = x
+	end
+	if y then
+		group.offset[2] = y
+	end
+end
+
+--- Sets a string into the DB values.
+--- Value can be;
+--- - string of length 0-255
+--- - double precision number
+---@param db_idx VehMon.DBIndex
+---@param db_idy VehMon.DBIndex
+---@param value VehMon.DBValue
+---@overload fun(self,db_idx:VehMon.DBIndex,values:VehMon.DBValue[])
+function VehMon:SetDBValue(db_idx, db_idy, value)
+	if value == nil and type(db_idy) == "table" then
+		for i, v in pairs(db_idy) do
+			if type(i) == "number" then
+				self:_state_set_db(db_idx, i, v)
+			end
+		end
+	else
+		self:_state_set_db(db_idx, db_idy, value)
+	end
+end
+
+--- Set/Adds the draw call to the current group.
+---@param r integer 0-255
+---@param g integer 0-255
+---@param b integer 0-255
+---@param a integer? 0-255
+function VehMon:DrawColor(r, g, b, a)
+	self:_state_draw(Packets.DRAW_COLOR, r, g, b, a or 255)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param w VehMon.MonCoord
+---@param h VehMon.MonCoord
+function VehMon:DrawRect(x, y, w, h)
+	self:_state_draw(Packets.DRAW_RECT, x, y, w, h)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param w VehMon.MonCoord
+---@param h VehMon.MonCoord
+function VehMon:DrawRectF(x, y, w, h)
+	self:_state_draw(Packets.DRAW_RECTF, x, y, w, h)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param r VehMon.MonCoord
+function VehMon:DrawCircle(x, y, r)
+	self:_state_draw(Packets.DRAW_CIRCLE, x, y, r)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param r VehMon.MonCoord
+function VehMon:DrawCircleF(x, y, r)
+	self:_state_draw(Packets.DRAW_CIRCLEF, x, y, r)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x1 VehMon.MonCoord
+---@param y1 VehMon.MonCoord
+---@param x2 VehMon.MonCoord
+---@param y2 VehMon.MonCoord
+---@param x3 VehMon.MonCoord
+---@param y3 VehMon.MonCoord
+function VehMon:DrawTriangle(x1, y1, x2, y2, x3, y3)
+	self:_state_draw(Packets.DRAW_TRIANGLE, x1, y1, x2, y2, x3, y3)
+end
+
+
+--- Set/Adds the draw call to the current group.
+---@param x1 VehMon.MonCoord
+---@param y1 VehMon.MonCoord
+---@param x2 VehMon.MonCoord
+---@param y2 VehMon.MonCoord
+---@param x3 VehMon.MonCoord
+---@param y3 VehMon.MonCoord
+function VehMon:DrawTriangleF(x1, y1, x2, y2, x3, y3)
+	self:_state_draw(Packets.DRAW_TRIANGLEF, x1, y1, x2, y2, x3, y3)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x1 VehMon.MonCoord
+---@param y1 VehMon.MonCoord
+---@param x2 VehMon.MonCoord
+---@param y2 VehMon.MonCoord
+function VehMon:DrawLine(x1, y1, x2, y2)
+	self:_state_draw(Packets.DRAW_LINE, x1, y1, x2, y2)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param db_idx VehMon.DBIndex
+---@param fmt string
+function VehMon:DrawText(x, y, db_idx, fmt)
+	self:_state_draw(Packets.DRAW_TEXT, x, y, db_idx, fmt)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MonCoord
+---@param y VehMon.MonCoord
+---@param w VehMon.MonCoord
+---@param h VehMon.MonCoord
+---@param db_idx VehMon.DBIndex
+---@param fmt string
+---@param horizontal_align integer? -1 left, 0 center, 1 right
+---@param vertical_align integer? -1 top, 0 center, 1 bottom
+function VehMon:DrawTextBox(x, y, w, h, db_idx, fmt, horizontal_align, vertical_align)
+	self:_state_draw(Packets.DRAW_TEXTBOX, x, y, w, h, db_idx, fmt, horizontal_align or -1, vertical_align or -1)
+end
+
+--- Set/Adds the draw call to the current group.
+---@param x VehMon.MapCoord
+---@param y VehMon.MapCoord
+---@param zoom VehMon.MapZoom
+function VehMon:DrawMap(x, y, zoom)
+	self:_state_draw(Packets.DRAW_MAP, x, y, zoom)
 end
 
 

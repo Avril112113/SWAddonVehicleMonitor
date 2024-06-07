@@ -3,6 +3,10 @@
 	Limited range of 0-255 for packet ids.
 	Packets don't require a writer to be sent, it'll just be an empty packet.
 	If a packet is missing a reader, it is silently ignored.
+
+	CUSTOM MODIFIED, see sections which start with 'START CUSTOM MODIFIED'
+	The modification is used for debugging sent packets.
+	This this version of binnet isn't be used for vehicles, char count is of no concern.
 ]]
 
 ---@diagnostic disable: lowercase-global
@@ -77,6 +81,16 @@ function Binnet.send(self, packetWriterId, ...)
 	_ = self.packetWriters[packetWriterId] and self.packetWriters[packetWriterId](self, writer, ...)
 	table.insert(writer, 1, #writer+1)  -- `writer:writeUByte` only appends, not prepend.
 	table.insert(self.outPackets, writer)
+	-- START CUSTOM MODIFIED
+	if BINNET_DEBUG_PACKETS then
+		BINNET_DEBUG_PACKETS_MSGS = BINNET_DEBUG_PACKETS_MSGS or {}
+		local parts = {}
+		for i, v in ipairs({...}) do
+			parts[i] = tostring(v)
+		end
+		BINNET_DEBUG_PACKETS_MSGS[writer] = ("BINNET WRITE %s(%s)"):format(tostring(BINNET_DEBUG_PACKETS[packetWriterId]), table.concat(parts, " "))
+	end
+	-- END CUSTOM MODIFIED
 end
 
 function Binnet.setLastUrgent(self)
@@ -124,6 +138,11 @@ function Binnet.write(self, valueCount)
 				break
 			end
 			self.outStream:writeStream(writer)
+			-- START CUSTOM MODIFIED
+			if BINNET_DEBUG_PACKETS_MSGS and BINNET_DEBUG_PACKETS_MSGS[writer] then
+				debug.log("[SW] [DEBUG] " .. BINNET_DEBUG_PACKETS_MSGS[writer])
+			end
+			-- END CUSTOM MODIFIED
 		end
 		for i=1,math.min(#self.outStream,maxByteCount-#valuesBytes) do
 			table.insert(valuesBytes, table.remove(self.outStream, 1))

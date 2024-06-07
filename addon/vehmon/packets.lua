@@ -89,9 +89,9 @@ end)
 Packets.GROUP_RESET = BinnetBase:registerPacketWriter(10, function(binnet, writer, group_id)
 	writer:writeUByte(group_id)
 end)
-Packets.GROUP_SYNC = BinnetBase:registerPacketWriter(11, function(binnet, writer, group_id, enabled)
+Packets.GROUP_SET = BinnetBase:registerPacketWriter(11, function(binnet, writer, group_id, draw_idx)
 	writer:writeUByte(group_id)
-	writer:writeUByte(enabled and 1 or 0)
+	writer:writeUByte(draw_idx)
 end)
 Packets.GROUP_ENABLE = BinnetBase:registerPacketWriter(12, function(binnet, writer, group_id)
 	writer:writeUByte(group_id)
@@ -116,16 +116,6 @@ Packets.DB_SET_NUMBER = BinnetBase:registerPacketWriter(31, function(binnet, wri
 	for _, byte in ipairs(to_zsr_double(n)) do
 		writer:writeUByte(byte)
 	end
-end)
-
-Packets.DB_SET_POS_N = BinnetBase:registerPacketWriter(33, function(binnet, writer, db_idx, db_idy, n, precision)
-	writer:writeUByte(db_idx)
-	writer:writeUByte(db_idy)
-	writer:writeUByte(1/precision)
-end)
-Packets.DB_SET_NEG_N = BinnetBase:registerPacketWriter(34, function(binnet, writer, db_idx, db_idy, n, precision)
-	writer:writeUByte(db_idx)
-	writer:writeUByte(db_idy)
 end)
 
 Packets.DRAW_COLOR = BinnetBase:registerPacketWriter(100, function(binnet, writer, r, g, b, a)
@@ -198,5 +188,12 @@ Packets.DRAW_MAP = BinnetBase:registerPacketWriter(110, function(binnet, writer,
 	writer:writeCustom(zoom, 0.1, 50, 0.00125)
 end)
 
+
+Packets.NamesMap = {}
+for i, v in pairs(Packets) do
+	if type(v) == "number" then
+		Packets.NamesMap[v] = i
+	end
+end
 
 return Packets

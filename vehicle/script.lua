@@ -17,12 +17,12 @@ MON_OFFSET_Y = property.getNumber("OffY")
 
 
 function reset()
-	---@type CmdGroup[]
+	---@type CmdGroup[] # Group -1 is only used as a default which isn't drawn and can't be set besides with a full reset.
 	cmd_groups = {}
-	for i=0,255 do
+	for i=-1,255 do
 		cmd_groups[i] = {enabled=false,offset={0,0}}
 	end
-	cmd_group_idx = 1
+	cmd_group_idx = -1
 	cmd_group_draw_idx = 1
 
 	db_values = {}
@@ -33,14 +33,14 @@ function reset()
 end
 reset()
 
-tick = 0
+-- tick = 0
 
 monitor_on = true
 function onTick()
-	tick = tick + 1
-	if tick < 10 then
-		return
-	end
+	-- tick = tick + 1
+	-- if tick < 60 then
+	-- 	return
+	-- end
 
 	cmd_groups[cmd_group_idx] = cmd_groups[cmd_group_idx] or {enabled=false}
 

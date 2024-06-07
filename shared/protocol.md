@@ -21,8 +21,8 @@
 
 `GROUP_RESET (group_id : 1 bytes)`
 - Sets as current group, removes all draw cmds.
-`GROUP_SYNC (group_id : 1 bytes, enabled : 1 bytes)`
-- Sets as current group, keeping existing but overwrites draw cmds from the beginning.
+`GROUP_SET (group_id : 1 bytes, draw_idx : 1 bytes)`
+- Sets current group and draw index.
 `GROUP_ENABLE (group_id : 1 bytes)`
 - Makes group drawn to screen.
 `GROUP_DISABLE (group_id : 1 bytes)`
