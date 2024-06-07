@@ -35,6 +35,9 @@ end
 ---@field state "inactive"|"deinit"|"waiting"|"ready"|"init"
 ---@field monitor VehMon.Monitor
 local VehMon = {}
+--- These are only a concern if they are constantly happening every tick.
+--- It is normal to encounter these when updating large amount of info or during initial setup
+VehMon.LOG_BINNET_OVERLOADS = true
 
 
 function VehMon._create_default_group()
@@ -117,6 +120,17 @@ function VehMon:_deinit()
 	self._state = nil
 end
 
+function VehMon:_get_binnet_tick_used()
+	local pending_bytes = #self._binnet.outStream
+	for _, packet in ipairs(self._binnet.outPackets) do
+		pending_bytes = pending_bytes + #packet
+	end
+	return pending_bytes
+end
+function VehMon:_get_binnet_tick_space()
+	return self.keypad_count*3 - self:_get_binnet_tick_used()
+end
+
 function VehMon:_reset_state()
 	self._state = {
 		do_reset = false,
@@ -146,8 +160,14 @@ function VehMon:_reset_state()
 end
 
 function VehMon:_update_state_changes()
-	-- TODO: We should 'throttle' down so we don't accidentially send old value due to overflowing the binnet buffer.
+	local tick_bytes_remaining = self:_get_binnet_tick_space()
 	for db_idx, _ in pairs(self._state.changed_db) do
+		if tick_bytes_remaining <= 0 then
+			if self.LOG_BINNET_OVERLOADS then
+				log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
+			end
+			return
+		end
 		local current = self._state.db[db_idx]
 		local prev = self._state.prev_db[db_idx]
 		if prev == nil then
@@ -163,6 +183,7 @@ function VehMon:_update_state_changes()
 				else
 					assert(false, ("Invalid db value of type '%s'"):format(type(v)))
 				end
+				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 				prev[db_idy] = v
 			end
 		end
@@ -170,6 +191,12 @@ function VehMon:_update_state_changes()
 	end
 
 	for group_id, _ in pairs(self._state.changed_groups) do
+		if tick_bytes_remaining <= 0 then
+			if self.LOG_BINNET_OVERLOADS then
+				log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
+			end
+			return
+		end
 		local current = self._state.groups[group_id]
 		local prev = self._state.prev_groups[group_id]
 		if prev == nil then
@@ -199,25 +226,35 @@ function VehMon:_update_state_changes()
 		if #changes > 0 then
 			if consider_reset and current.enabled ~= prev.enabled then
 				self._binnet:send(Packets.GROUP_RESET, group_id)
+				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 				prev.enabled = false
 				self._state.remote_group_id = group_id
 				self._state.remote_group_draw_idx = 1
 			end
 			for _, draw_idx in ipairs(changes) do
+				if tick_bytes_remaining <= 0 then
+					if self.LOG_BINNET_OVERLOADS then
+						log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
+					end
+					return
+				end
 				local current_packet = current[draw_idx]
 				---@cast current_packet VehMon._State.Draw
 				if self._state.remote_group_id ~= group_id or self._state.remote_group_draw_idx ~= draw_idx then
 					self._binnet:send(Packets.GROUP_SET, group_id, draw_idx)
+					tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 					self._state.remote_group_id = group_id
 					self._state.remote_group_draw_idx = draw_idx
 				end
 				self._binnet:send(table.unpack(current_packet))
+				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 				prev[draw_idx] = current_packet
 				self._state.remote_group_draw_idx = self._state.remote_group_draw_idx + 1
 			end
 		end
 		if current.offset[1] ~= prev.offset[1] or current.offset[2] ~= prev.offset[2] then
 			self._binnet:send(Packets.GROUP_OFFSET, group_id, current.offset[1], current.offset[2])
+			tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 			prev.offset = current.offset
 		end
 		if current.enabled ~= prev.enabled then
@@ -226,6 +263,7 @@ function VehMon:_update_state_changes()
 			else
 				self._binnet:send(Packets.GROUP_DISABLE, group_id)
 			end
+			tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 			prev.enabled = current.enabled
 		end
 	end

@@ -88,7 +88,12 @@ function Binnet.send(self, packetWriterId, ...)
 		for i, v in ipairs({...}) do
 			parts[i] = tostring(v)
 		end
-		BINNET_DEBUG_PACKETS_MSGS[writer] = ("BINNET WRITE %s(%s)"):format(tostring(BINNET_DEBUG_PACKETS[packetWriterId]), table.concat(parts, " "))
+		local msg = ("BINNET WRITE %s(%s)"):format(tostring(BINNET_DEBUG_PACKETS[packetWriterId]), table.concat(parts, " "))
+		if BINNET_DEBUG_PACKETS_MODE == "send" then
+			debug.log("[SW] [DEBUG] " .. msg)
+		else
+			BINNET_DEBUG_PACKETS_MSGS[writer] = msg
+		end
 	end
 	-- END CUSTOM MODIFIED
 end
@@ -141,6 +146,7 @@ function Binnet.write(self, valueCount)
 			-- START CUSTOM MODIFIED
 			if BINNET_DEBUG_PACKETS_MSGS and BINNET_DEBUG_PACKETS_MSGS[writer] then
 				debug.log("[SW] [DEBUG] " .. BINNET_DEBUG_PACKETS_MSGS[writer])
+				BINNET_DEBUG_PACKETS_MSGS[writer] = nil
 			end
 			-- END CUSTOM MODIFIED
 		end

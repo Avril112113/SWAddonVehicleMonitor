@@ -8,7 +8,12 @@ require "avcmds"
 require "commands"
 local VehMon = require "vehmon"
 
+-- Custom added feature to `binnet.lua`
+-- Allows debugging of all packets being sent
 BINNET_DEBUG_PACKETS = require("vehmon.packets").NamesMap
+-- "send" means do the log upon using :send() being called, otherwise it'll log when it's written to the output stream.
+-- "send" is helpful with `VehMon.LOG_BINNET_OVERLOADS = true`
+BINNET_DEBUG_PACKETS_MODE = "send"
 
 
 ---@param self table|{vehmon:VehMon}
