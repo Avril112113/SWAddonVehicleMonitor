@@ -107,9 +107,6 @@ function VehMon:_init()
 		self._alt_binnets[i] = Packets.BinnetBase:new()
 		self._alt_binnets[i].vehmon = self
 	end
-	---@alias VehMon._State.Draw any[] # [1]=PacketID, ...=args
-	-- `enabled_defer` is only used for changes.
-	---@alias VehMon._State.Group {enabled:boolean, enabled_defer:boolean, offset:{[1]:number,[2]:number}}|VehMon._State.Draw[]
 	self:_reset_state()
 end
 
@@ -133,6 +130,10 @@ function VehMon:_get_binnet_tick_space()
 end
 
 function VehMon:_reset_state()
+	---@alias VehMon._State.Draw any[] # [1]=PacketID, ...=args
+	-- `enabled_defer` is only used for changes.
+	---@alias VehMon._State.Group {enabled:boolean, enabled_defer:boolean, offset:{[1]:number,[2]:number}}|VehMon._State.Draw[]
+
 	self._state = {
 		do_reset = false,
 
@@ -161,6 +162,14 @@ function VehMon:_reset_state()
 end
 
 function VehMon:_update_state_changes()
+	if self._state.do_reset or not self._state.has_done_initial_reset then
+		self._binnet:send(Packets.FULL_RESET)
+		if self._state.do_reset then
+			self:_reset_state()
+		end
+		self._state.has_done_initial_reset = true
+	end
+
 	-- TODO: Prioritise sending groups, but vehicle side format might explode currently.
 
 	local tick_bytes_remaining = self:_get_binnet_tick_space()
@@ -315,11 +324,6 @@ function VehMon:_process()
 end
 
 function VehMon:_write()
-	if self._state.do_reset then
-		self:_reset_state()
-		self._binnet:send(Packets.FULL_RESET)
-	end
-
 	if self.state == "ready" then
 		self:_update_state_changes()
 	end

@@ -1,7 +1,6 @@
 require("shallowcopy")
 require("iostream")
 require("binnet_short")
-require("packets")
 
 INPUT_COUNT = property.getNumber("Inputs")
 OUTPUT_COUNT = property.getNumber("Outputs")
@@ -32,6 +31,8 @@ function reset()
 	prev_input2 = {0,0,false}
 end
 reset()
+
+require("packets")
 
 -- tick = 0
 

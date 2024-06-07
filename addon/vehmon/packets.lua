@@ -61,8 +61,6 @@ BinnetBase:registerPacketReader(1, function(binnet, reader)
 	vehmon.monitor.height = readMonCoord(reader)
 	-- log_debug(("%s - resolution %s %s"):format(vehmon.vehicle_id, vehmon.monitor.width, vehmon.monitor.height))
 end)
-Packets.GET_RESOLUTION = BinnetBase:registerPacketWriter(1, function(binnet, writer)
-end)
 
 ---@param binnet Binnet_VehMon
 BinnetBase:registerPacketReader(2, function(binnet, reader)
@@ -82,6 +80,9 @@ BinnetBase:registerPacketReader(3, function(binnet, reader)
 	-- log_debug(("%s - touch2 %s %s %s"):format(vehmon.vehicle_id, vehmon.monitor.touch2.x, vehmon.monitor.touch2.y, vehmon.monitor.touch2.pressed))
 end)
 
+
+Packets.GET_RESOLUTION = BinnetBase:registerPacketWriter(1, function(binnet, writer)
+end)
 
 Packets.FULL_RESET = BinnetBase:registerPacketWriter(2, function(binnet, writer)
 end)
