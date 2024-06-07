@@ -1,5 +1,15 @@
 HALF_12P2 = (2^12)/2
 
+DEFAULT_FMT_MAP = {
+	-- expect number
+	A=0.0, a=0.0, E=0.0, e=0.0, f=0.0, G=0.0, g=0.0,
+	-- expect integer
+	c=0, d=0, i=0, o=0, u=0, X=0, x=0,
+	-- expect string
+	s="", q="",
+}
+
+
 ---@param writer IOStream
 ---@param x integer
 ---@param y integer
@@ -42,22 +52,22 @@ Binnet:registerPacketReader(10, function(_, reader)
 	cmd_groups[cmd_group_idx] = {enabled=false,offset={0,0}}
 	cmd_group_draw_idx = 1
 end)
+
 -- GROUP_SET
 ---@param reader IOStream
 Binnet:registerPacketReader(11, function(_, reader)
 	cmd_group_idx = reader:readUByte()
 	cmd_group_draw_idx = reader:readUByte()
 end)
+
+function __packet_reader_enabled(_, reader, packet_id)
+	cmd_groups[reader:readUByte()].enabled = packet_id == 12
+end
 -- GROUP_ENABLE
----@param reader IOStream
-Binnet:registerPacketReader(12, function(_, reader)
-	cmd_groups[reader:readUByte()].enabled = true
-end)
+Binnet:registerPacketReader(12, __packet_reader_enabled)
 -- GROUP_DISABLE
----@param reader IOStream
-Binnet:registerPacketReader(13, function(_, reader)
-	cmd_groups[reader:readUByte()].enabled = false
-end)
+Binnet:registerPacketReader(13, __packet_reader_enabled)
+
 -- GROUP_OFFSET
 ---@param reader IOStream
 Binnet:registerPacketReader(13, function(_, reader)
@@ -82,7 +92,13 @@ PROPS_FUNCS = {
 	["DBFmt"]=function(reader)
 		__db_idx = reader:readUByte()
 		__fmt = reader:readString()
-		return __db_idx == 0 and __fmt or __fmt:format(table.unpack(db_values[__db_idx]))
+		__values = {}
+		__i = 1
+		for __fmt_spesifier in __fmt:gmatch("%%[-+ #0]?[%d.*]*([%w%%])") do
+			table.insert(__values, db_values[__db_idx] and db_values[__db_idx][__i] or DEFAULT_FMT_MAP[__fmt_spesifier])
+			__i = __i + 1
+		end
+		return __db_idx == 0 and __fmt or __fmt:format(table.unpack(__values))
 	end,
 	---@param reader IOStream
 	["AlignByte"]=function(reader)
