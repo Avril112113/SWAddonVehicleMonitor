@@ -108,7 +108,8 @@ function VehMon:_init()
 		self._alt_binnets[i].vehmon = self
 	end
 	---@alias VehMon._State.Draw any[] # [1]=PacketID, ...=args
-	---@alias VehMon._State.Group {enabled:boolean, offset:{[1]:number,[2]:number}}|VehMon._State.Draw[]
+	-- `enabled_defer` is only used for changes.
+	---@alias VehMon._State.Group {enabled:boolean, enabled_defer:boolean, offset:{[1]:number,[2]:number}}|VehMon._State.Draw[]
 	self:_reset_state()
 end
 
@@ -160,6 +161,8 @@ function VehMon:_reset_state()
 end
 
 function VehMon:_update_state_changes()
+	-- TODO: Prioritise sending groups, but vehicle side format might explode currently.
+
 	local tick_bytes_remaining = self:_get_binnet_tick_space()
 	for db_idx, _ in pairs(self._state.changed_db) do
 		if tick_bytes_remaining <= 0 then
@@ -224,13 +227,24 @@ function VehMon:_update_state_changes()
 			end
 		end
 		if #changes > 0 then
-			if consider_reset and current.enabled ~= prev.enabled then
+			if (consider_reset and current.enabled ~= prev.enabled) or (#prev > #current) then
 				self._binnet:send(Packets.GROUP_RESET, group_id)
 				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 				prev.enabled = false
 				self._state.remote_group_id = group_id
 				self._state.remote_group_draw_idx = 1
 			end
+		end
+		if not current.enabled_defer and current.enabled ~= prev.enabled then
+			if current.enabled then
+				self._binnet:send(Packets.GROUP_ENABLE, group_id)
+			else
+				self._binnet:send(Packets.GROUP_DISABLE, group_id)
+			end
+			tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
+			prev.enabled = current.enabled
+		end
+		if #changes > 0 then
 			for _, draw_idx in ipairs(changes) do
 				if tick_bytes_remaining <= 0 then
 					if self.LOG_BINNET_OVERLOADS then
@@ -375,9 +389,12 @@ end
 --- Sets weather a group is enabled or not.
 ---@param group_id VehMon.GroupID
 ---@param enabled boolean
-function VehMon:GroupEnabled(group_id, enabled)
+---@param defer boolean? # Default `true`, will not set enabled state unless all other info is already sent, `false` means the player may observe partial UI.
+function VehMon:GroupEnabled(group_id, enabled, defer)
 	self._state.changed_groups[group_id] = true
-	self._state.groups[group_id].enabled = enabled
+	local group = self._state.groups[group_id]
+	group.enabled = enabled
+	group.enabled_defer = not (defer == false)
 end
 
 --- Sets the groups position offset.
