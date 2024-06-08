@@ -37,34 +37,34 @@ require("packets")
 
 monitor_on = true
 function onTick()
-	local resolution = {input.getNumber(1), input.getNumber(2)}
-	local input1 = {input.getNumber(3), input.getNumber(4), input.getBool(1)}
-	local input2 = {input.getNumber(5), input.getNumber(6), input.getBool(2)}
+	__resolution = {input.getNumber(1), input.getNumber(2)}
+	__input1 = {input.getNumber(3), input.getNumber(4), input.getBool(1)}
+	__input2 = {input.getNumber(5), input.getNumber(6), input.getBool(2)}
 
-	local values = {}
+	__values = {}
 	for i=1,INPUT_COUNT do
-		values[i] = input.getNumber(6+i)
+		__values[i] = input.getNumber(6+i)
 	end
-	local packet_processed = Binnet:process(values)
+	__packet_processed = Binnet:process(__values)
 
-	function send_packet_t_neq(a, b, packet_id, ...)
+	function send_packet_if_tbl_neq(a, b, packet_id, ...)
 		if b[1] ~= a[1] or b[2] ~= a[2] or b[3] ~= a[3] then
 			Binnet:send(packet_id, ...)
 		end
 	end
-	send_packet_t_neq(prev_resolution, resolution, PACKET_RESOLUION, resolution)
-	send_packet_t_neq(prev_input1, input1, PACKET_INPUT1, input1)
-	send_packet_t_neq(prev_input2, input2, PACKET_INPUT2, input2)
+	send_packet_if_tbl_neq(prev_resolution, __resolution, PACKET_RESOLUION, __resolution)
+	send_packet_if_tbl_neq(prev_input1, __input1, PACKET_INPUT1, __input1)
+	send_packet_if_tbl_neq(prev_input2, __input2, PACKET_INPUT2, __input2)
 
-	output.setBool(2, #Binnet.outStream > 0 or packet_processed > 0)
-	local output_values = Binnet:write(OUTPUT_COUNT)
-	for i=1,#output_values do
-		output.setNumber(i, output_values[i])
+	output.setBool(2, #Binnet.outStream > 0 or __packet_processed > 0)
+	__output_values = Binnet:write(OUTPUT_COUNT)
+	for i=1,#__output_values do
+		output.setNumber(i, __output_values[i])
 	end
-	if resolution[1] ~= 0 and resolution[2] ~= 0 then
-		prev_resolution = resolution
-		prev_input1 = input1
-		prev_input2 = input2
+	if __resolution[1] ~= 0 and __resolution[2] ~= 0 then
+		prev_resolution = __resolution
+		prev_input1 = __input1
+		prev_input2 = __input2
 	end
 	output.setBool(1, monitor_on)
 end
