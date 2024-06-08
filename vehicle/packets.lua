@@ -69,7 +69,7 @@ Binnet:registerPacketReader(13, __packet_reader_enabled)
 
 -- GROUP_OFFSET
 ---@param reader IOStream
-Binnet:registerPacketReader(13, function(_, reader)
+Binnet:registerPacketReader(14, function(_, reader)
 	cmd_groups[reader:readUByte()].offset = {readMonCoord(reader), readMonCoord(reader)}
 end)
 
