@@ -43,6 +43,8 @@ VehMon.LOG_BINNET_OVERLOADS = true
 function VehMon._create_default_group()
 	return {enabled=false,offset={0,0}}
 end
+-- Do not modify!
+VehMon._ref_default_group = VehMon._create_default_group()
 
 
 ---@param vehicle_id integer
@@ -103,6 +105,7 @@ function VehMon:_init()
 	self._binnet = Packets.BinnetBase:new()
 	self._binnet.vehmon = self
 	self._alt_binnets = {}
+	self._resync_button = false
 	for i=1,self.alt_count do
 		self._alt_binnets[i] = Packets.BinnetBase:new()
 		self._alt_binnets[i].vehmon = self
@@ -115,6 +118,7 @@ function VehMon:_deinit()
 	self.monitor = nil
 	self._binnet = nil
 	self._alt_binnets = nil
+	self._resync_button = nil
 	self._state = nil
 end
 
@@ -136,6 +140,8 @@ function VehMon:_reset_state()
 
 	self._state = {
 		do_reset = false,
+		---@type table<integer,integer> # <peer_id,ticks_in_sync_radius>
+		players_synced = {},
 
 		group_id = -1,
 		group_draw_idx = 1,
@@ -151,9 +157,9 @@ function VehMon:_reset_state()
 		---@type table<integer,VehMon.DBValue[]>
 		prev_db = {},
 
-		---@type table<integer,true> # Stuff marked to be checked.
+		---@type table<integer,boolean> # Stuff marked to be checked or synced.
 		changed_groups = {},
-		---@type table<integer,true> # Stuff marked to be checked.
+		---@type table<integer,boolean> # Stuff marked to be checked or synced.
 		changed_db = {},
 	}
 	for i=-1,255 do
@@ -161,7 +167,24 @@ function VehMon:_reset_state()
 	end
 end
 
-function VehMon:_update_state_changes()
+function VehMon:_state_mark_everything_to_sync()
+	log_info(("VehMon for %s is resyncing."):format(self.vehicle_id))
+	-- Groups prioritize changed status
+	for group_id, group in pairs(self._state.groups) do
+		if #group > 0 and self._state.changed_groups[group_id] ~= true then
+			self._state.changed_groups[group_id] = false
+		end
+	end
+	-- DB Values prioritize sync status
+	for db_idx, values in pairs(self._state.db) do
+		if #values > 0 then
+			self._state.changed_db[db_idx] = false
+		end
+	end
+end
+
+---@param is_sync_pass boolean
+function VehMon:_update_state_changes(is_sync_pass)
 	if self._state.do_reset or not self._state.has_done_initial_reset then
 		self._binnet:send(Packets.FULL_RESET)
 		if self._state.do_reset then
@@ -170,61 +193,36 @@ function VehMon:_update_state_changes()
 		self._state.has_done_initial_reset = true
 	end
 
-	-- TODO: Prioritise sending groups, but vehicle side format might explode currently.
-
 	local tick_bytes_remaining = self:_get_binnet_tick_space()
-	for db_idx, _ in pairs(self._state.changed_db) do
-		if tick_bytes_remaining <= 0 then
-			if self.LOG_BINNET_OVERLOADS then
-				log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
-			end
-			return
-		end
-		local current = self._state.db[db_idx]
-		local prev = self._state.prev_db[db_idx]
-		if prev == nil then
-			prev = {}
-			self._state.prev_db[db_idx] = prev
-		end
-		for db_idy, v in pairs(current) do
-			if v ~= prev[db_idy] then
-				if type(v) == "string" then
-					self._binnet:send(Packets.DB_SET_STRING, db_idx, db_idy, v)
-				elseif type(v) == "number" then
-					self._binnet:send(Packets.DB_SET_NUMBER, db_idx, db_idy, v)
-				else
-					assert(false, ("Invalid db value of type '%s'"):format(type(v)))
-				end
-				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
-				prev[db_idy] = v
-			end
-		end
-		self._state.changed_db[db_idx] = nil
-	end
 
-	for group_id, _ in pairs(self._state.changed_groups) do
+	for group_id, has_changed in pairs(self._state.changed_groups) do
 		if tick_bytes_remaining <= 0 then
-			if self.LOG_BINNET_OVERLOADS then
+			if not is_sync_pass and self.LOG_BINNET_OVERLOADS then
 				log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
 			end
 			return
 		end
+		-- `current` is not to be modified!
 		local current = self._state.groups[group_id]
+		-- `prev` is to be updated to new values.
 		local prev = self._state.prev_groups[group_id]
 		if prev == nil then
 			prev = VehMon._create_default_group()
 			self._state.prev_groups[group_id] = prev
 		end
+		-- `compare` is not to be modified!
+		local compare = is_sync_pass and self._ref_default_group or prev
+
 		local changes = {}
 		local consider_reset = true
 		for draw_idx, current_packet in ipairs(current) do
-			if prev[draw_idx] == nil then
+			if compare[draw_idx] == nil then
 				table.insert(changes, draw_idx)
 			else
-				local prev_packet = prev[draw_idx]
+				local compare_packet = compare[draw_idx]
 				local found_difference = false
 				for i, v in ipairs(current_packet) do
-					if v ~= prev_packet[i] then
+					if v ~= compare_packet[i] then
 						table.insert(changes, draw_idx)
 						found_difference = true
 						break
@@ -235,8 +233,8 @@ function VehMon:_update_state_changes()
 				end
 			end
 		end
-		if #changes > 0 then
-			if (consider_reset and current.enabled ~= prev.enabled) or (#prev > #current) then
+		if not is_sync_pass and #changes > 0 then
+			if (consider_reset and current.enabled ~= compare.enabled) or (#compare > #current) then
 				self._binnet:send(Packets.GROUP_RESET, group_id)
 				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 				prev.enabled = false
@@ -244,7 +242,7 @@ function VehMon:_update_state_changes()
 				self._state.remote_group_draw_idx = 1
 			end
 		end
-		if not current.enabled_defer and current.enabled ~= prev.enabled then
+		if (is_sync_pass or not current.enabled_defer) and current.enabled ~= compare.enabled then
 			if current.enabled then
 				self._binnet:send(Packets.GROUP_ENABLE, group_id)
 			else
@@ -256,14 +254,14 @@ function VehMon:_update_state_changes()
 		if #changes > 0 then
 			for _, draw_idx in ipairs(changes) do
 				if tick_bytes_remaining <= 0 then
-					if self.LOG_BINNET_OVERLOADS then
+					if not is_sync_pass and self.LOG_BINNET_OVERLOADS then
 						log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
 					end
 					return
 				end
 				local current_packet = current[draw_idx]
 				---@cast current_packet VehMon._State.Draw
-				if self._state.remote_group_id ~= group_id or self._state.remote_group_draw_idx ~= draw_idx then
+				if is_sync_pass or self._state.remote_group_id ~= group_id or self._state.remote_group_draw_idx ~= draw_idx then
 					self._binnet:send(Packets.GROUP_SET, group_id, draw_idx)
 					tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 					self._state.remote_group_id = group_id
@@ -275,12 +273,12 @@ function VehMon:_update_state_changes()
 				self._state.remote_group_draw_idx = self._state.remote_group_draw_idx + 1
 			end
 		end
-		if current.offset[1] ~= prev.offset[1] or current.offset[2] ~= prev.offset[2] then
+		if current.offset[1] ~= compare.offset[1] or current.offset[2] ~= compare.offset[2] then
 			self._binnet:send(Packets.GROUP_OFFSET, group_id, current.offset[1], current.offset[2])
 			tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 			prev.offset = current.offset
 		end
-		if current.enabled ~= prev.enabled then
+		if not is_sync_pass and current.enabled ~= compare.enabled then
 			if current.enabled then
 				self._binnet:send(Packets.GROUP_ENABLE, group_id)
 			else
@@ -288,6 +286,42 @@ function VehMon:_update_state_changes()
 			end
 			tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
 			prev.enabled = current.enabled
+		end
+		if not has_changed == is_sync_pass then
+			self._state.changed_groups[group_id] = nil
+		end
+	end
+
+	for db_idx, has_changed in pairs(self._state.changed_db) do
+		if tick_bytes_remaining <= 0 then
+			if not is_sync_pass and self.LOG_BINNET_OVERLOADS then
+				log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
+			end
+			return
+		end
+		-- `current` is not to be modified!
+		local current = self._state.db[db_idx]
+		-- `prev` is to be updated to new values.
+		local prev = self._state.prev_db[db_idx]
+		if prev == nil then
+			prev = {}
+			self._state.prev_db[db_idx] = prev
+		end
+		for db_idy, v in pairs(current) do
+			if is_sync_pass or (has_changed and v ~= prev[db_idy]) then
+				if type(v) == "string" then
+					self._binnet:send(Packets.DB_SET_STRING, db_idx, db_idy, v)
+				elseif type(v) == "number" then
+					self._binnet:send(Packets.DB_SET_NUMBER, db_idx, db_idy, v)
+				else
+					assert(false, ("Invalid db value of type '%s'"):format(type(v)))
+				end
+				tick_bytes_remaining = tick_bytes_remaining - #self._binnet.outPackets[#self._binnet.outPackets]
+				prev[db_idy] = v
+			end
+		end
+		if is_sync_pass or not has_changed == is_sync_pass then
+			self._state.changed_db[db_idx] = nil
 		end
 	end
 end
@@ -321,11 +355,38 @@ function VehMon:_process()
 	if self.state ~= "ready" and self.monitor.width ~= 0 and self.monitor.height ~= 0 then
 		self.state = "ready"
 	end
+
+	local vehPos = server.getVehiclePos(self.vehicle_id)
+	if vehPos ~= nil then
+		local players_synced = self._state.players_synced
+		for _, player in pairs(server.getPlayers()) do
+			local playerPos = server.getPlayerPos(player.id)
+			local dist = matrix.distance(vehPos, playerPos)
+			if dist < 2000 then
+				players_synced[player.id] = (players_synced[player.id] or 0) + 1
+				-- Give the player 5 seconds to load the vehicle.
+				if players_synced[player.id] == 60*5 then
+					self:_state_mark_everything_to_sync()
+				end
+			else
+				players_synced[player.id] = nil
+			end
+		end
+	end
 end
 
 function VehMon:_write()
 	if self.state == "ready" then
-		self:_update_state_changes()
+		local btn = server.getVehicleButton(self.vehicle_id, "vehmon_resync")
+		if btn ~= nil then
+			if self._resync_button == false and btn.on == true then
+				self:_state_mark_everything_to_sync()
+			end
+			self._resync_button = btn.on
+		end
+
+		self:_update_state_changes(false)
+		self:_update_state_changes(true)
 	end
 
 	if self.monitor.width == 0 and not self._sent_resolution_request then
@@ -346,7 +407,10 @@ end
 function VehMon:_state_set_db(db_idx, db_idy, value)
 	assert(type(db_idx) == "number" and db_idx >= 0 and db_idx <= 255, "Invalid db_idx, expected integer of range 0-255.")
 	assert(type(db_idy) == "number" and db_idy >= 0 and db_idy <= 255, "Invalid db_idy, expected integer of range 0-255.")
-	self._state.changed_db[db_idx] = true
+	-- Sync status takes priority
+	if self._state.changed_db[db_idx] ~= false then
+		self._state.changed_db[db_idx] = true
+	end
 	self._state.db[db_idx] = self._state.db[db_idx] or {}
 	self._state.db[db_idx][db_idy] = value
 end
