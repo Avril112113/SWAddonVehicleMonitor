@@ -77,10 +77,6 @@ end
 ---@param ... any
 function Binnet.send(self, packetWriterId, ...)
 	local writer = IOStream.new()
-	writer:writeUByte(packetWriterId)
-	_ = self.packetWriters[packetWriterId] and self.packetWriters[packetWriterId](self, writer, ...)
-	table.insert(writer, 1, #writer+1)  -- `writer:writeUByte` only appends, not prepend.
-	table.insert(self.outPackets, writer)
 	-- START CUSTOM MODIFIED
 	if BINNET_DEBUG_PACKETS then
 		BINNET_DEBUG_PACKETS_MSGS = BINNET_DEBUG_PACKETS_MSGS or {}
@@ -96,6 +92,10 @@ function Binnet.send(self, packetWriterId, ...)
 		end
 	end
 	-- END CUSTOM MODIFIED
+	writer:writeUByte(packetWriterId)
+	_ = self.packetWriters[packetWriterId] and self.packetWriters[packetWriterId](self, writer, ...)
+	table.insert(writer, 1, #writer+1)  -- `writer:writeUByte` only appends, not prepend.
+	table.insert(self.outPackets, writer)
 end
 
 function Binnet.setLastUrgent(self)
