@@ -120,7 +120,7 @@ PROPS_FUNCS = {
 	end,
 	--[[8]]
 	---@param reader IOStream
-	function(reader)
+	function(reader)  -- zsr_double
 		while #reader < 8 do
 			reader[#reader+1] = 0
 		end
@@ -129,12 +129,14 @@ PROPS_FUNCS = {
 	end,
 	--[[9]]
 	---@param reader IOStream
-	function(reader)
+	function(reader)  -- MapXZZoom
 		-- 1.3e5 == 130000
 		-- 1e-4 == 0.0001
 		__x, __z = reader:readCustom(-1.3e5, 1.3e5, 1e-4), reader:readCustom(-1.3e5, 1.3e5, 1e-4)
 		__zoom = reader:readCustom(0.1, 50, 0.00125)
-		return __x - (MON_OFFSET_X / prev_resolution[1] * __zoom * 1000), __z, __zoom
+		return function()
+			return __x - (MON_OFFSET_X / prev_resolution[1] * __zoom * 1000), __z - (MON_OFFSET_Y / prev_resolution[1] * __zoom * 1000), __zoom
+		end
 	end,
 }
 for i=0,255 do
@@ -153,7 +155,13 @@ for i=0,255 do
 			cmd_groups[cmd_group_idx][cmd_group_draw_idx] = function(group)
 				__draw_args = {}
 				for arg_i,arg_v in ipairs(_read_args) do
-					__draw_args[arg_i] = type(arg_v) == "function" and arg_v(group) or arg_v
+					if type(arg_v) == "function" then
+						for _, v in ipairs({arg_v(group)}) do
+							table.insert(__draw_args, v)
+						end
+					else
+						table.insert(__draw_args, arg_v)
+					end
 				end
 				screen[args[3]](table.unpack(__draw_args))
 			end
