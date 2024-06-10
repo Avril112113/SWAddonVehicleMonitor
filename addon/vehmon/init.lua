@@ -454,10 +454,10 @@ end
 
 --- Resets the group and selects it.
 ---@param group_id VehMon.GroupID
----@param draw_idx VehMon.DrawIDX?
+---@param draw_idx VehMon.DrawIDX? # Defaults to appending new draw calls (#group+1)
 function VehMon:GroupSet(group_id, draw_idx)
 	self._state.group_id = group_id
-	self._state.group_draw_idx = draw_idx or 1
+	self._state.group_draw_idx = draw_idx or #self._state.groups[group_id]+1
 end
 
 --- Sets weather a group is enabled or not.
