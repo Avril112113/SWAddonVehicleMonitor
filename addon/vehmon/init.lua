@@ -111,6 +111,9 @@ function VehMon:_init()
 		self._alt_binnets[i].vehmon = self
 	end
 	self:_reset_state()
+	--- All players within 2k radius of the vehicle.
+	---@type table<integer,number> # peer_id, distance
+	self.players = {}
 end
 
 function VehMon:_deinit()
@@ -120,6 +123,7 @@ function VehMon:_deinit()
 	self._alt_binnets = nil
 	self._resync_button = nil
 	self._state = nil
+	self.players = nil
 end
 
 function VehMon:_get_binnet_tick_used()
@@ -368,8 +372,10 @@ function VehMon:_process()
 				if players_synced[player.id] == 60*5 then
 					self:_state_mark_everything_to_sync()
 				end
+				self.players[player.id] = dist
 			else
 				players_synced[player.id] = nil
+				self.players[player.id] = nil
 			end
 		end
 	end
