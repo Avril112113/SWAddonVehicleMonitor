@@ -35,17 +35,18 @@ reset()
 require("packets")
 
 
-monitor_on = true
 function onTick()
 	__resolution = {input.getNumber(1), input.getNumber(2)}
 	__input1 = {input.getNumber(3), input.getNumber(4), input.getBool(1)}
 	__input2 = {input.getNumber(5), input.getNumber(6), input.getBool(2)}
 
 	__values = {}
+	__non_zero_n = false
 	for i=1,INPUT_COUNT do
 		__values[i] = input.getNumber(6+i)
+		__non_zero_n = __non_zero_n or __values[1] ~= 0
 	end
-	__packet_processed = Binnet:process(__values)
+	Binnet:process(__values)
 
 	function send_packet_if_tbl_neq(a, b, packet_id, ...)
 		if b[1] ~= a[1] or b[2] ~= a[2] or b[3] ~= a[3] then
@@ -56,17 +57,15 @@ function onTick()
 	send_packet_if_tbl_neq(prev_input1, __input1, PACKET_INPUT1, __input1)
 	send_packet_if_tbl_neq(prev_input2, __input2, PACKET_INPUT2, __input2)
 
-	output.setBool(2, #Binnet.outStream > 0 or __packet_processed > 0)
-	__output_values = Binnet:write(OUTPUT_COUNT)
-	for i=1,#__output_values do
-		output.setNumber(i, __output_values[i])
+	output.setBool(2, #Binnet.outStream > 0 or __non_zero_n)
+	for i,v in ipairs(Binnet:write(OUTPUT_COUNT)) do
+		output.setNumber(i, v)
 	end
 	if __resolution[1] ~= 0 and __resolution[2] ~= 0 then
 		prev_resolution = __resolution
 		prev_input1 = __input1
 		prev_input2 = __input2
 	end
-	output.setBool(1, monitor_on)
 end
 
 function onDraw()

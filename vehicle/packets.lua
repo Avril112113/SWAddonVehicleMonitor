@@ -73,46 +73,63 @@ Binnet:registerPacketReader(14, function(_, reader)
 	cmd_groups[reader:readUByte()].offset = {readMonCoord(reader), readMonCoord(reader)}
 end)
 
--- These are called each draw call, the reader contents is copied for each draw call.
--- Not best for perf, but best for char count which is the limiting factor.
 PROPS_FUNCS = {
-	["String"]=IOStream.readString,
-	["UByte"]=IOStream.readUByte,
-	["MonCoord"]=readMonCoord,
+	--[[1]]
+	IOStream.readString,
+	--[[2]]
+	IOStream.readUByte,
+	--[[3]]
+	readMonCoord,
+	--[[4]]
 	---@param reader IOStream
-	["MonX"]=function(reader, group)
-		return MON_OFFSET_X + group.offset[1] + readMonCoord(reader)
-	end,
-	---@param reader IOStream
-	["MonY"]=function(reader, group)
-		return MON_OFFSET_Y + group.offset[2] + readMonCoord(reader)
-	end,
-	---@param reader IOStream
-	["DBFmt"]=function(reader)
-		__db_idx = reader:readUByte()
-		__fmt = reader:readString()
-		__values = {}
-		__i = 1
-		for __fmt_spesifier in __fmt:gmatch("%%[-+ #0]?[%d.*]*([%w%%])") do
-			table.insert(__values, db_values[__db_idx] and db_values[__db_idx][__i] or DEFAULT_FMT_MAP[__fmt_spesifier])
-			__i = __i + 1
+	function(reader, _mon_x)  -- MonX
+		_mon_x = readMonCoord(reader)
+		---@param group CmdGroup
+		return function(group)
+			return MON_OFFSET_X + group.offset[1] + _mon_x
 		end
-		return __db_idx == 0 and __fmt or __fmt:format(table.unpack(__values))
 	end,
+	--[[5]]
 	---@param reader IOStream
-	["AlignByte"]=function(reader)
+	function(reader, _mon_y)  -- MonY
+		_mon_y = readMonCoord(reader)
+		---@param group CmdGroup
+		return function(group)
+			return MON_OFFSET_X + group.offset[2] + _mon_y
+		end
+	end,
+	--[[6]]
+	---@param reader IOStream
+	function(reader, _db_idx, _fmt)  -- DBFmt
+		_db_idx = reader:readUByte()
+		_fmt = reader:readString()
+		return function()
+			__values = {}
+			__i = 1
+			for __fmt_spesifier in _fmt:gmatch("%%[-+ #0]?[%d.*]*([%w%%])") do
+				table.insert(__values, db_values[_db_idx] and db_values[_db_idx][__i] or DEFAULT_FMT_MAP[__fmt_spesifier])
+				__i = __i + 1
+			end
+			return _db_idx == 0 and _fmt or _fmt:format(table.unpack(__values))
+		end
+	end,
+	--[[7]]
+	---@param reader IOStream
+	function(reader)  -- AlignByte
 		return (reader:readUByte() or 0)-1
 	end,
+	--[[8]]
 	---@param reader IOStream
-	["zsr_double"]=function(reader)
+	function(reader)
 		while #reader < 8 do
 			reader[#reader+1] = 0
 		end
 		__n = iostream_packunpack("BBBBBBBB", ">d", table.unpack(reader))
 		return __n//1|0 == __n and __n|0 or __n
 	end,
+	--[[9]]
 	---@param reader IOStream
-	["MapXZZoom"]=function(reader)
+	function(reader)
 		-- 1.3e5 == 130000
 		-- 1e-4 == 0.0001
 		__x, __z = reader:readCustom(-1.3e5, 1.3e5, 1e-4), reader:readCustom(-1.3e5, 1.3e5, 1e-4)
@@ -121,29 +138,32 @@ PROPS_FUNCS = {
 	end,
 }
 for i=0,255 do
-	local args = {}
+	local args = {}  -- Must be local
 	for s in (property.getText(tostring(i)) or ""):gmatch("([^,]+)") do table.insert(args, s) end
 	-- debug.log("[SW] " .. i .. " " .. table.concat(args, " "))
 	if args[1] == "draw" then
-		Binnet:registerPacketReader(i, function (_, reader)
+		Binnet:registerPacketReader(i, function (_, reader, _read_args)
+			_read_args = {}
+			for arg_reader_i=4,#args do
+				for _, v in ipairs({PROPS_FUNCS[tonumber(args[arg_reader_i])](reader)}) do
+					table.insert(_read_args, v)
+				end
+			end
 			---@param group CmdGroup
 			cmd_groups[cmd_group_idx][cmd_group_draw_idx] = function(group)
-				local draw_args = {}
-				local reader_cpy = shallowCopy(reader, {})
-				for arg_reader_i=4,#args do
-					for _, v in ipairs({PROPS_FUNCS[args[arg_reader_i]](reader_cpy, group)}) do
-						table.insert(draw_args, v)
-					end
+				__draw_args = {}
+				for arg_i,arg_v in ipairs(_read_args) do
+					__draw_args[arg_i] = type(arg_v) == "function" and arg_v(group) or arg_v
 				end
-				screen[args[3]](table.unpack(draw_args))
+				screen[args[3]](table.unpack(__draw_args))
 			end
 			cmd_group_draw_idx = cmd_group_draw_idx + 1
 		end)
 	elseif args[1] == "db" then
 		Binnet:registerPacketReader(i, function(_, reader)
-			local db_idx, db_idy = reader:readUByte(), reader:readUByte()
-			db_values[db_idx] = db_values[db_idx] or {}
-			db_values[db_idx][db_idy] = PROPS_FUNCS[args[3]](reader)
+			__p_db_idx, __p_db_idy = reader:readUByte(), reader:readUByte()
+			db_values[__p_db_idx] = db_values[__p_db_idx] or {}
+			db_values[__p_db_idx][__p_db_idy] = PROPS_FUNCS[tonumber(args[3])](reader)
 		end)
 	end
 end

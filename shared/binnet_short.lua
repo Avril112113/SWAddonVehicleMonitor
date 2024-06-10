@@ -24,13 +24,13 @@ function binnet_encode(a, b, c)
 	return (iostream_packunpack("BBBB", "<f", a, b, c, 1))
 end
 
----@param f number
----@return byte, byte, byte
-function binnet_decode(f)
-	__a, __b, __c = iostream_packunpack("<f", "BBBB", f)
-	---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
-	return __a or 0, __b or 0, __c or 0
-end
+-- ---@param f number
+-- ---@return byte, byte, byte
+-- function binnet_decode(f)
+-- 	local a, b, c = iostream_packunpack("<f", "BBBB", f)
+-- 	---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
+-- 	return a or 0, b or 0, c or 0
+-- end
 
 
 ---@alias PacketReadHandlerFunc fun(binnet:Binnet_Short, reader:IOStream, packetId:integer)
@@ -96,13 +96,12 @@ end
 -- ---@return integer byteCount, integer packetCount
 function Binnet.process(self, values)
 	for _, v in ipairs(values) do
-		__a, __b, __c = binnet_decode(v)
-		table.insert(self.inStream, __a)
-		table.insert(self.inStream, __b)
-		table.insert(self.inStream, __c)
+		__a, __b, __c = iostream_packunpack("<f", "BBBB", v)
+		table.insert(self.inStream, __a or 0)
+		table.insert(self.inStream, __b or 0)
+		table.insert(self.inStream, __c or 0)
 	end
 
-	__packetProcessed = 0
 	-- local totalByteCount, packetCount = 0, 0
 	while self.inStream[1] ~= nil do
 		__byteCount = self.inStream[1]
@@ -113,13 +112,11 @@ function Binnet.process(self, values)
 			__process_reader:readUByte()  -- We already peeked the byte count.
 			__packetId = __process_reader:readUByte()
 			_ = self.packetReaders[__packetId] and self.packetReaders[__packetId](self, __process_reader, __packetId)
-			__packetProcessed = 1
 			-- packetCount = packetCount + 1
 		else
 			break
 		end
 	end
-	return __packetProcessed
 	-- return totalByteCount, packetCount
 end
 
