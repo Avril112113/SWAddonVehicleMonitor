@@ -22,8 +22,8 @@ end
 ---@class VehMon.Monitor
 ---@field width integer
 ---@field height integer
----@field touch1 {x:integer,y:integer,pressed:boolean,was_pressed:boolean}
----@field touch2 {x:integer,y:integer,pressed:boolean,was_pressed:boolean}
+---@field touch1 {x:integer,y:integer,pressed:boolean,was_pressed:boolean,prevx:integer,prevy:integer}
+---@field touch2 {x:integer,y:integer,pressed:boolean,was_pressed:boolean,prevx:integer,prevy:integer}
 
 ---@class VehMon
 ---@field vehicle_id integer
@@ -98,8 +98,8 @@ function VehMon:_init()
 	self.monitor = {
 		width = 0,
 		height = 0,
-		touch1 = {x=0, y=0, pressed=false, was_pressed=false},
-		touch2 = {x=0, y=0, pressed=false, was_pressed=true},
+		touch1 = {x=0, y=0, prevx=0, prevy=0, pressed=false, was_pressed=false},
+		touch2 = {x=0, y=0, prevx=0, prevy=0, pressed=false, was_pressed=false},
 	}
 	---@diagnostic disable-next-line: assign-type-mismatch
 	self._binnet = Packets.BinnetBase:new()
@@ -349,7 +349,11 @@ function VehMon:_process()
 	if not self.initialized then return end
 
 	self.monitor.touch1.was_pressed = self.monitor.touch1.pressed
+	self.monitor.touch1.prevx = self.monitor.touch1.x
+	self.monitor.touch1.prevy = self.monitor.touch1.x
 	self.monitor.touch2.was_pressed = self.monitor.touch2.pressed
+	self.monitor.touch2.prevx = self.monitor.touch2.x
+	self.monitor.touch2.prevy = self.monitor.touch2.x
 
 	binnet_process()
 	for i=1,self.alt_count do
