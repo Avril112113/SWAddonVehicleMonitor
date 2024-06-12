@@ -176,7 +176,7 @@ function VehMon:_state_mark_everything_to_sync()
 	-- Groups prioritize sync status
 	for group_id, group in pairs(self._state.groups) do
 		if #group > 0 then
-			self._state.changed_groups[group_id] = 1
+			self._state.changed_groups[group_id] = 0
 		end
 	end
 	-- DB Values prioritize sync status
@@ -217,25 +217,27 @@ function VehMon:_update_state_changes()
 		end
 		-- `compare` is not to be modified!
 		local compare = sync_state and self._ref_default_group or prev
-		local draw_only = not (sync_state == false or sync_state == 1)
+		local draw_only = not (sync_state == false or sync_state == 0)
 
 		local changes = {}
 		local consider_reset = true
 		for draw_idx, current_packet in ipairs(current) do
-			if compare[draw_idx] == nil then
-				table.insert(changes, draw_idx)
-			else
-				local compare_packet = compare[draw_idx]
-				local found_difference = false
-				for i, v in ipairs(current_packet) do
-					if v ~= compare_packet[i] then
-						table.insert(changes, draw_idx)
-						found_difference = true
-						break
+			if sync_state == false or draw_idx > sync_state then
+				if compare[draw_idx] == nil then
+					table.insert(changes, draw_idx)
+				else
+					local compare_packet = compare[draw_idx]
+					local found_difference = false
+					for i, v in ipairs(current_packet) do
+						if v ~= compare_packet[i] then
+							table.insert(changes, draw_idx)
+							found_difference = true
+							break
+						end
 					end
-				end
-				if not found_difference then
-					consider_reset = false
+					if not found_difference then
+						consider_reset = false
+					end
 				end
 			end
 		end
@@ -250,7 +252,7 @@ function VehMon:_update_state_changes()
 			end
 		end
 		-- Set enabled state now if started syncing or not defer, otherwise do it after everything else.
-		if not draw_only and not current.enabled_defer and current.enabled ~= compare.enabled then
+		if (sync_state == 0 or (not draw_only and not current.enabled_defer)) and current.enabled ~= compare.enabled then
 			if current.enabled then
 				self._binnet:send(Packets.GROUP_ENABLE, group_id)
 			else
@@ -267,12 +269,6 @@ function VehMon:_update_state_changes()
 		end
 		if #changes > 0 then
 			for _, draw_idx in ipairs(changes) do
-				-- Syncing can get into an infinite loop if the entire group doesn't fit in 1 tick.
-				if type(sync_state) == "number" then
-					if draw_idx <= sync_state then
-						goto continue
-					end
-				end
 				if tick_bytes_remaining <= 0 then
 					if self.LOG_BINNET_OVERLOADS then
 						log_info(("VehMon for %s was overloaded this tick with %s/%s bytes"):format(self.vehicle_id, self:_get_binnet_tick_used(), self.keypad_count*3))
@@ -292,7 +288,6 @@ function VehMon:_update_state_changes()
 				prev[draw_idx] = current_packet
 				self._state.remote_group_draw_idx = self._state.remote_group_draw_idx + 1
 				self._state.changed_groups[group_id] = draw_idx
-			    ::continue::
 			end
 		end
 		-- We may have already set it before.
