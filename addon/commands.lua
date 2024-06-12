@@ -20,3 +20,20 @@ AVCmds.createCommand{name="tp"}
 			server.setPlayerPos(target.id, pos)
 		end
 	}
+
+AVCmds.createCommand{name="reloadveh"}
+	:registerGlobalCommand()
+	:setPermission("admin")
+	:addHandler{
+		AVCmds.integer{},
+		---@param ctx AVCommandContext
+		---@param vehicle_id integer
+		function(ctx, vehicle_id)
+			local pos = server.getVehiclePos(vehicle_id)
+			if pos == nil then
+				AVCmds.response{ctx, "Invalid vehicle_id"}
+			else
+				server.setVehiclePos(vehicle_id, pos)
+			end
+		end
+	}
