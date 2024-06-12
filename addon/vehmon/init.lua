@@ -530,7 +530,7 @@ end
 ---@alias VehMon.GroupID integer # 0 - 255 integer
 ---@alias VehMon.DrawIDX integer # 0 - 255 integer
 ---@alias VehMon.MonCoord number # -2046 - 2048 with 0.125 precision
----@alias VehMon.DBIndex integer # 1 - 255 integer, '0' is used for no db index
+---@alias VehMon.DBIndex integer # idx 0 - 255 integer, idy 0 - 255 integer, idx of 0 is used to specify none
 ---@alias VehMon.DBValue string|number
 ---@alias VehMon.MapCoord number # -130000 - 130000 with 0.0001 precision
 ---@alias VehMon.MapZoom number # 0.1 - 50 with 0.00125 precision
@@ -551,7 +551,7 @@ function VehMon:GroupReset(group_id)
 	self._state.group_draw_idx = 1
 end
 
---- Resets the group and selects it.
+--- Sets the group and draw_idx.
 ---@param group_id VehMon.GroupID
 ---@param draw_idx VehMon.DrawIDX? # Defaults to appending new draw calls (#group+1)
 function VehMon:GroupSet(group_id, draw_idx)
@@ -559,7 +559,7 @@ function VehMon:GroupSet(group_id, draw_idx)
 	self._state.group_draw_idx = draw_idx or #self._state.groups[group_id]+1
 end
 
---- Sets weather a group is enabled or not.
+--- Sets whether a group is enabled or not.
 ---@param group_id VehMon.GroupID
 ---@param enabled boolean
 ---@param defer boolean? # Default `true`, will not set enabled state unless all other info is already sent, `false` means the player may observe partial UI.
@@ -589,10 +589,12 @@ function VehMon:GroupOffset(group_id, x, y)
 	end
 end
 
---- Sets a string into the DB values.
---- Value can be;
---- - string of length 0-255
---- - double precision number
+--- Sets a values into the DB of values.  
+--- Do not use a db_idx of 0, it will likely be unsable.  
+--- 
+--- Value can be;  
+--- - string of length 0-251  
+--- - number with double precision  
 ---@param db_idx VehMon.DBIndex
 ---@param db_idy VehMon.DBIndex
 ---@param value VehMon.DBValue
@@ -684,7 +686,8 @@ function VehMon:DrawLine(x1, y1, x2, y2)
 	self:_state_draw(Packets.DRAW_LINE, x1, y1, x2, y2)
 end
 
---- Set/Adds the draw call to the current group.
+--- Set/Adds the draw call to the current group.  
+--- `db_idx` of 0 will make the `fmt` string not be formatted.  
 ---@param x VehMon.MonCoord
 ---@param y VehMon.MonCoord
 ---@param db_idx VehMon.DBIndex
@@ -694,6 +697,7 @@ function VehMon:DrawText(x, y, db_idx, fmt)
 end
 
 --- Set/Adds the draw call to the current group.
+--- `db_idx` of 0 will make the `fmt` string not be formatted.  
 ---@param x VehMon.MonCoord
 ---@param y VehMon.MonCoord
 ---@param w VehMon.MonCoord
