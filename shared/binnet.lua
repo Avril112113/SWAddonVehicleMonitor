@@ -28,7 +28,7 @@ end
 function binnet_decode(f)
 	local a, b, c = iostream_packunpack("<f", "BBBB", f)
 	---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
-	return a or 0, b or 0, c or 0
+	return a, b, c
 end
 
 
@@ -106,10 +106,7 @@ end
 ---@return integer byteCount, integer packetCount
 function Binnet.process(self, values)
 	for _, v in ipairs(values) do
-		local a, b, c = binnet_decode(v)
-		table.insert(self.inStream, a)
-		table.insert(self.inStream, b)
-		table.insert(self.inStream, c)
+		table.move({binnet_decode(v)}, 1, 3, #self.inStream+1, self.inStream)
 	end
 
 	local totalByteCount, packetCount = 0, 0

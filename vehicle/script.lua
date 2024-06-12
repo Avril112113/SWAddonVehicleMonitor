@@ -71,6 +71,7 @@ end
 function onDraw()
 	for i=0,255 do
 		if cmd_groups[i] and cmd_groups[i].enabled then
+			screen.setColor(255, 255, 255)
 			for _, f in ipairs(cmd_groups[i]) do
 				f(cmd_groups[i])
 			end

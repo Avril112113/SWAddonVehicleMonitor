@@ -29,7 +29,7 @@ end
 -- function binnet_decode(f)
 -- 	local a, b, c = iostream_packunpack("<f", "BBBB", f)
 -- 	---@diagnostic disable-next-line: return-type-mismatch, missing-return-value
--- 	return a or 0, b or 0, c or 0
+-- 	return a, b, c
 -- end
 
 
@@ -96,10 +96,7 @@ end
 -- ---@return integer byteCount, integer packetCount
 function Binnet.process(self, values)
 	for _, v in ipairs(values) do
-		__a, __b, __c = iostream_packunpack("<f", "BBBB", v)
-		table.insert(self.inStream, __a or 0)
-		table.insert(self.inStream, __b or 0)
-		table.insert(self.inStream, __c or 0)
+		table.move({iostream_packunpack("<f", "BBBB", v)}, 1, 3, #self.inStream+1, self.inStream)
 	end
 
 	-- local totalByteCount, packetCount = 0, 0
