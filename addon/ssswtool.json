@@ -3,12 +3,12 @@
 	"entrypoint": "script.lua",
 	"src": [
 		".",
-		"../shared",
-		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds"
+		"./vehmon",
+		"./libs",
+		"../shared"
 	],
 	"out": "{SW_SAVE}/data/missions/{NAME}/script.lua",
 	"transformers": {
-		"combiner": true,
-		"tracing": true
+		"tracing": "full"
 	}
 }

@@ -6,6 +6,9 @@ See [addon/script.lua](addon/script.lua) for usage example.
 The only build tool tested is [SSSWTool](https://github.com/Avril112113/SSSWTool).  
 Other build tools like LifeBoatAPI may not work due to `require()` differences, make an issue if you want a build tool to be supported.  
 
+To use this library, add both `AddonVehicleMonitor/addon/vehmon` and `AddonVehicleMonitor/shared` to your require path.  
+For SSSWTool, these would be added to the `src` list in `ssswtool.json`.  
+
 
 ## Details
 VehMon uses many keypads and dials to communicate various data to/from the vehicle.  

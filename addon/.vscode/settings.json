@@ -2,8 +2,7 @@
 	"Lua.runtime.version": "Lua 5.3",
     "Lua.runtime.pathStrict": true,
 	"Lua.workspace.library": [
-		"../shared",
-		"C:/Projects/Lua/Stormworks/AvrilsSWTools/AVCmds"
+		"../shared"
 	],
 	"json.schemas": [
 		{
