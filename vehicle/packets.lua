@@ -134,8 +134,9 @@ PROPS_FUNCS = {
 		-- 1e-4 == 0.0001
 		__x, __z = reader:readCustom(-1.3e5, 1.3e5, 1e-4), reader:readCustom(-1.3e5, 1.3e5, 1e-4)
 		__zoom = reader:readCustom(0.1, 50, 0.00125)
-		return function()
-			return __x - (MON_OFFSET_X / prev_resolution[1] * __zoom * 1000), __z - (MON_OFFSET_Y / prev_resolution[1] * __zoom * 1000), __zoom
+		---@param group CmdGroup
+		return function(group)
+			return __x - ((MON_OFFSET_X + group.offset[1]) / prev_resolution[1] * __zoom * 1000), __z - ((MON_OFFSET_Y - group.offset[2]) / prev_resolution[1] * __zoom * 1000), __zoom
 		end
 	end,
 }

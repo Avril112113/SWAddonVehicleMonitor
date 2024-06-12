@@ -15,14 +15,14 @@
 ---@diagnostic disable: duplicate-doc-alias
 
 
----@param a byte
----@param b byte
----@param c byte
----@return number
-function binnet_encode(a, b, c)
-	---@diagnostic disable-next-line: return-type-mismatch
-	return (iostream_packunpack("BBBB", "<f", a, b, c, 1))
-end
+-- ---@param a byte
+-- ---@param b byte
+-- ---@param c byte
+-- ---@return number
+-- function binnet_encode(a, b, c)
+-- 	---@diagnostic disable-next-line: return-type-mismatch
+-- 	return (iostream_packunpack("BBBB", "<f", a, b, c, 1))
+-- end
 
 -- ---@param f number
 -- ---@return byte, byte, byte
@@ -37,7 +37,6 @@ end
 ---@alias PacketWriteHandlerFunc fun(binnet:Binnet_Short, writer:IOStream, ...)
 
 
--- NOTE: ALL binnets share readers/writers!
 ---@class Binnet_Short
 ---@field inStream IOStream
 ---@field outStream IOStream
@@ -123,7 +122,8 @@ function Binnet.write(self, valueCount)
 	-- SHORTER VERSION: Numerous changes, so no commented out original code.
 	__write_values = {}
 	while #__write_values < valueCount do
-		table.insert(__write_values, binnet_encode(table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0))
+		-- table.insert(__write_values, binnet_encode(table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0))
+		table.insert(__write_values, (iostream_packunpack("BBBB", "<f", table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0, table.remove(self.outStream, 1) or 0, 1)))
 	end
 	return __write_values
 end

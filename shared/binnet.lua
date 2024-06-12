@@ -13,6 +13,9 @@
 ---@diagnostic disable: duplicate-set-field
 ---@diagnostic disable: duplicate-doc-alias
 
+-- CUSTOM MODIFIED
+---@diagnostic disable: undefined-global
+
 
 ---@param a byte
 ---@param b byte
@@ -36,7 +39,7 @@ end
 ---@alias PacketWriteHandlerFunc fun(binnet:Binnet, writer:IOStream, ...)
 
 
--- NOTE: ALL binnets share readers/writers!
+--- Note: Binnets will copy all readers and writers to the new binnet
 ---@class Binnet
 ---@field inStream IOStream
 ---@field outStream IOStream

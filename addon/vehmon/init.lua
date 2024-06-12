@@ -509,21 +509,17 @@ function VehMon:ScreenMapToWorld(screenx, screeny, mapx, mapz, mapzoom, group_id
 		mapz - (screeny - self.monitor.height/2) / self.monitor.width * mapzoom * 1000
 end
 
+--- Returned values assume same group offset as where DrawMap was used.  
+--- If for some reason they differ, you will need to adjust for the difference using VehMon:GetGroupOffset.  
 ---@param worldx number
 ---@param worldz number
 ---@param mapx number
 ---@param mapz number
 ---@param mapzoom number
----@param group_id VehMon.GroupID?
-function VehMon:WorldToScreenMap(worldx, worldz, mapx, mapz, mapzoom, group_id)
-	local screenx, screeny = 0, 0
-	if group_id then
-		local group = self._state.groups[group_id]
-		screenx, screeny = screenx + group.offset[1], screeny - group.offset[2]
-	end
+function VehMon:WorldToScreenMap(worldx, worldz, mapx, mapz, mapzoom)
 	return
-		(worldx - mapx) / 1000 / mapzoom * self.monitor.width + self.monitor.width/2 + screenx,
-		(mapz - worldz) / 1000 / mapzoom * self.monitor.width + self.monitor.height/2 + screeny
+		(worldx - mapx) / 1000 / mapzoom * self.monitor.width + self.monitor.width/2,
+		(mapz - worldz) / 1000 / mapzoom * self.monitor.width + self.monitor.height/2
 end
 
 
@@ -571,6 +567,10 @@ function VehMon:GroupEnabled(group_id, enabled, defer)
 	group.enabled = enabled
 	group.enabled_defer = not (defer == false)
 end
+---@param group_id VehMon.GroupID
+function VehMon:GetGroupEnabled(group_id)
+	return self._state.groups[group_id].enabled
+end
 
 --- Sets the groups position offset.
 ---@param group_id VehMon.GroupID
@@ -587,6 +587,11 @@ function VehMon:GroupOffset(group_id, x, y)
 	if y then
 		group.offset[2] = y
 	end
+end
+---@param group_id VehMon.GroupID
+function VehMon:GetGroupOffset(group_id)
+	local offset = self._state.groups[group_id].offset
+	return offset[1], offset[2]
 end
 
 --- Sets a values into the DB of values.  
@@ -710,7 +715,8 @@ function VehMon:DrawTextBox(x, y, w, h, db_idx, fmt, horizontal_align, vertical_
 	self:_state_draw(Packets.DRAW_TEXTBOX, x, y, w, h, db_idx, fmt, horizontal_align or -1, vertical_align or -1)
 end
 
---- Set/Adds the draw call to the current group.
+--- Set/Adds the draw call to the current group.  
+--- NOTE: Group offset is accounted for.  
 ---@param x VehMon.MapCoord
 ---@param y VehMon.MapCoord
 ---@param zoom VehMon.MapZoom
