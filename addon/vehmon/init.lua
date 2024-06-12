@@ -505,8 +505,8 @@ function VehMon:ScreenMapToWorld(screenx, screeny, mapx, mapz, mapzoom, group_id
 		screenx, screeny = screenx + group.offset[1], screeny - group.offset[2]
 	end
 	return
-		mapx + (screenx - self.monitor.width/2) / self.monitor.width / mapzoom * 1000,
-		mapz - (screeny - self.monitor.height/2) / self.monitor.width / mapzoom * 1000
+		mapx + (screenx - self.monitor.width/2) / self.monitor.width * mapzoom * 1000,
+		mapz - (screeny - self.monitor.height/2) / self.monitor.width * mapzoom * 1000
 end
 
 ---@param worldx number
@@ -522,8 +522,8 @@ function VehMon:WorldToScreenMap(worldx, worldz, mapx, mapz, mapzoom, group_id)
 		screenx, screeny = screenx + group.offset[1], screeny - group.offset[2]
 	end
 	return
-		(worldx - mapx) / 1000 * mapzoom * self.monitor.width + self.monitor.width/2 + screenx,
-		(mapz - worldz) / 1000 * mapzoom * self.monitor.width + self.monitor.height/2 + screeny
+		(worldx - mapx) / 1000 / mapzoom * self.monitor.width + self.monitor.width/2 + screenx,
+		(mapz - worldz) / 1000 / mapzoom * self.monitor.width + self.monitor.height/2 + screeny
 end
 
 
