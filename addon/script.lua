@@ -31,7 +31,6 @@ local function create_test_vehmon(self)
 		function tbl:is_inside(x, y)
 			local ox, oy = self.vehmon:GetGroupOffset(self.group_id)
 			local t = inside_rect(x, y, self.x+ox, self.y+oy, self.x+ox+self.w-1, self.y+oy+self.h-1)
-			log_debug("T", t, x, y, "", self.x+ox, self.y+oy, self.x+ox+self.w, self.y+oy+self.h)
 			return t
 		end
 		local original_draw = tbl.draw
@@ -243,6 +242,7 @@ function onTick(game_ticks)
 		elseif vehmon_handler.vehmon.state == "deinit" then
 			-- Has just been deinitialised, vehicle has unloaded or despawned.
 			-- For despawned, `onTickStart()` must be called AFTER `onVehicleDespawn` for this state to be reached.
+			vehmon_handler.__has_done_setup = nil
 		elseif vehmon_handler.vehmon.state == "inactive" then
 			-- Vehicle is not loaded.
 		end
