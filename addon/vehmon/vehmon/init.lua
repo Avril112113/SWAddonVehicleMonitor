@@ -31,6 +31,10 @@ end
 ---@field dial_count integer
 ---@field keypad_count integer
 ---@field alt_count integer
+---@field sync_distance number # Default: 400 meters
+---@field enable_distance number # Default: 400 meters
+---@field disable_distance number # Default: 600 meters
+---@field players table<integer,number> # <peer_id,distance>
 ---@field initialized boolean
 ---@field state "inactive"|"deinit"|"waiting"|"ready"|"init"
 ---@field monitor VehMon.Monitor
@@ -38,7 +42,6 @@ local VehMon = {}
 --- These are only a concern if they are constantly happening every tick.
 --- It is normal to encounter these when updating large amount of info or during initial setup
 VehMon.LOG_BINNET_OVERLOADS = true
-
 
 function VehMon._create_default_group()
 	return {enabled=false,offset={0,0}}
@@ -58,6 +61,10 @@ function VehMon.new(vehicle_id, dial_count, keypad_count, alt_count)
 		dial_count = dial_count,
 		keypad_count = keypad_count,
 		alt_count = alt_count or 0,
+		sync_distance = 400,
+		enable_distance = 400,
+		disable_distance = 600,
+		players = {},
 		initialized = false,
 		state = "inactive",
 	})
@@ -65,8 +72,37 @@ function VehMon.new(vehicle_id, dial_count, keypad_count, alt_count)
 end
 
 function VehMon:onTickStart()
+	local enabled = self.initialized
+
 	local is_simulating, exists = server.getVehicleSimulating(self.vehicle_id)
-	if not exists or not is_simulating then
+	if is_simulating and exists then
+		local closest_dist = math.huge
+		local vehPos = server.getVehiclePos(self.vehicle_id)
+		if vehPos ~= nil then
+			-- FIXME: self.players may contain disconnected players.
+			for _, player in pairs(server.getPlayers()) do
+				local playerPos = server.getPlayerPos(player.id)
+				local dist = matrix.distance(vehPos, playerPos)
+				if dist < self.enable_distance then
+					self.players[player.id] = dist
+					if dist < closest_dist then
+						closest_dist = dist
+					end
+				elseif dist > self.disable_distance then
+					self.players[player.id] = nil
+				end
+			end
+		end
+		if closest_dist < self.enable_distance then
+			enabled = true
+		elseif closest_dist > self.disable_distance then
+			enabled = false
+		end
+	else
+		enabled = false
+	end
+
+	if not enabled then
 		if self.initialized then
 			log_debug(("%s - De-Init"):format(self.vehicle_id))
 			self.state = "deinit"
@@ -105,15 +141,13 @@ function VehMon:_init()
 	self._binnet = Packets.BinnetBase:new()
 	self._binnet.vehmon = self
 	self._alt_binnets = {}
+	self._sent_resolution_request = false
 	self._resync_button = false
 	for i=1,self.alt_count do
 		self._alt_binnets[i] = Packets.BinnetBase:new()
 		self._alt_binnets[i].vehmon = self
 	end
 	self:_reset_state()
-	--- All players within 2k radius of the vehicle.
-	---@type table<integer,number> # peer_id, distance
-	self.players = {}
 end
 
 function VehMon:_deinit()
@@ -121,9 +155,9 @@ function VehMon:_deinit()
 	self.monitor = nil
 	self._binnet = nil
 	self._alt_binnets = nil
+	self._sent_resolution_request = nil
 	self._resync_button = nil
 	self._state = nil
-	self.players = nil
 end
 
 function VehMon:_get_binnet_tick_used()
@@ -412,23 +446,16 @@ function VehMon:_process()
 		self.state = "ready"
 	end
 
-	local vehPos = server.getVehiclePos(self.vehicle_id)
-	if vehPos ~= nil then
-		local players_synced = self._state.players_synced
-		for _, player in pairs(server.getPlayers()) do
-			local playerPos = server.getPlayerPos(player.id)
-			local dist = matrix.distance(vehPos, playerPos)
-			if dist < 2000 then
-				players_synced[player.id] = (players_synced[player.id] or 0) + 1
-				-- Give the player 5 seconds to load the vehicle.
-				if players_synced[player.id] == 60*5 then
-					self:_state_mark_everything_to_sync()
-				end
-				self.players[player.id] = dist
-			else
-				players_synced[player.id] = nil
-				self.players[player.id] = nil
+	local players_synced = self._state.players_synced
+	for peer_id, dist in pairs(self.players) do
+		if dist < self.sync_distance then
+			players_synced[peer_id] = (players_synced[peer_id] or 0) + 1
+			-- Give it 3 second, as more players might move within range, or to load the vehicle if teleporting.
+			if players_synced[peer_id] == 60*3 then
+				self:_state_mark_everything_to_sync()
 			end
+		else
+			players_synced[peer_id] = nil
 		end
 	end
 end
