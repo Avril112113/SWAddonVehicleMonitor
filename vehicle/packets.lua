@@ -120,12 +120,14 @@ PROPS_FUNCS = {
 	end,
 	--[[8]]
 	---@param reader IOStream
-	function(reader)  -- zsr_double
+	function(reader)  -- from_zsr_double
 		while #reader < 8 do
 			reader[#reader+1] = 0
 		end
 		__n = iostream_packunpack("BBBBBBBB", ">d", table.unpack(reader))
-		return __n//1|0 == __n and __n|0 or __n
+		---@diagnostic disable-next-line: unknown-cast-variable
+		---@cast __n number
+		return math.floor(__n) == __n and math.floor(__n) or __n
 	end,
 	--[[9]]
 	---@param reader IOStream

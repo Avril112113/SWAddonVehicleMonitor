@@ -40,7 +40,8 @@ local function from_zsr_double(bytes)
 		bytes[#bytes+1] = 0
 	end
 	local n = iostream_packunpack("BBBBBBBB", ">d", table.unpack(bytes))
-	return n//1|0 == n and n|0 or n
+	---@cast n number
+	return math.floor(n) == n and math.floor(n) or n
 end
 
 
